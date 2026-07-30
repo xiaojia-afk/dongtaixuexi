@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows 逆向 & 游戏安全 — 小佳的学习笔记</title>
+<style>
+:root{--bg:#f0f2f5;--sidebar-bg:#1a1d23;--sidebar-text:#a8adb8;--card:#fff;--text:#212529;--muted:#6c757d;--border:#dee2e6;--accent:#0d6efd;--code-bg:#f1f3f5;--table-stripe:#f8f9fa;--tag-done:#d1e7dd;--tag-text:#0f5132;--sw:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sw);background:var(--sidebar-bg);color:var(--sidebar-text);padding:28px 20px;overflow-y:auto;z-index:10;user-select:none}
+.sidebar h2{color:#fff;font-size:1rem;margin-bottom:6px;border:none;padding:0}
+.sidebar .sub{font-size:.72rem;color:#6b7280;margin-bottom:20px}
+.sidebar .roadmap{font-size:.7rem;line-height:1.6;color:#6b7280;background:#111318;border-radius:6px;padding:10px 12px;margin-bottom:20px;white-space:pre-wrap}
+.sidebar .roadmap .here{color:#fbbf24;font-weight:600}
+.sidebar .roadmap .done{color:#34d399}
+.sidebar nav a{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;color:var(--sidebar-text);text-decoration:none;font-size:.85rem;transition:all .15s;margin-bottom:2px}
+.sidebar nav a:hover{background:#262930;color:#e0e3eb}
+.sidebar nav a.active{background:#1e3a5f;color:#60a5fa;font-weight:600}
+.sidebar nav a .dot{width:8px;height:8px;border-radius:50%;background:#374151;flex-shrink:0}
+.sidebar nav a.active .dot{background:#60a5fa}
+.sidebar nav a.done .dot{background:#34d399}
+.sidebar .progress{margin-top:20px;font-size:.75rem;color:#6b7280;border-top:1px solid #262930;padding-top:14px}
+.sidebar .progress .bar{height:4px;background:#262930;border-radius:2px;margin-top:6px;overflow:hidden}
+.sidebar .progress .bar .fill{height:100%;background:#34d399;border-radius:2px;transition:width .4s}
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.pc{flex:1;display:flex;flex-direction:column;padding:32px 40px 20px;max-width:860px;width:100%}
+.page{display:none;flex:1}
+.page.active{display:block}
+.page h2{font-size:1.4rem;margin-bottom:2px}
+.page .day-meta{color:var(--muted);font-size:.82rem;margin-bottom:20px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.75rem;font-weight:600}
+.tag-done{background:var(--tag-done);color:var(--tag-text)}
+h3{font-size:1.05rem;margin:24px 0 8px}
+p{margin:8px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
+th,td{padding:8px 10px;border:1px solid var(--border);text-align:left}
+th{background:#e9ecef;font-weight:600}
+tr:nth-child(even) td{background:var(--table-stripe)}
+pre{background:#1e1e2e;color:#cdd6f4;padding:14px 18px;border-radius:6px;overflow-x:auto;margin:10px 0;font-size:.85rem;line-height:1.55}
+code{font-family:"Cascadia Code","Fira Code","JetBrains Mono",monospace;font-size:.85em}
+:not(pre)>code{background:var(--code-bg);padding:1px 5px;border-radius:3px;color:#d6336c}
+pre code{background:none;padding:0;color:inherit}
+.practice-box{margin-top:28px;border-top:2px solid #34d399;padding-top:16px}
+.practice-box h3{color:#0f5132;margin-top:0}
+.planned-box{margin-top:18px;border-left:4px solid #fbbf24;background:#fff8e1;padding:14px 16px;border-radius:6px}
+.planned-box h3{color:#92400e;margin-top:0}
+.planned-box p{color:#5f4b1b}
+.nav-bar{display:flex;align-items:center;justify-content:center;gap:20px;padding:16px 0 24px;border-top:1px solid var(--border);margin-top:16px}
+.nav-bar button{padding:8px 18px;border:1px solid var(--border);background:var(--card);border-radius:6px;cursor:pointer;font-size:.88rem;color:var(--text);transition:all .15s}
+.nav-bar button:hover{background:#e9ecef}
+.nav-bar button:disabled{opacity:.35;cursor:default}
+.nav-bar .pi{font-size:.85rem;color:var(--muted);min-width:60px;text-align:center}
+@media(max-width:768px){.sidebar{width:200px;padding:20px 14px}.main{margin-left:200px}.pc{padding:20px 18px}}
+.log-section{margin-top:16px;font-size:.7rem;color:#6b7280;border-top:1px solid #262930;padding-top:12px}.log-title{color:#9ca3af;font-weight:600;margin-bottom:8px}.log-entry{margin-bottom:8px}.log-date{color:#fbbf24;margin-bottom:2px}.log-item{color:#6b7280;padding:1px 0}.log-item::before{content:"- ";color:#4b5563}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<h2>学习笔记</h2>
+<div class="sub">Windows 逆向 · 游戏安全</div>
+<div class="roadmap">▶前期基础<span class="done"> ✅</span>
+▶PE 格式 (Day 1-4)<span class="done"> ✅</span>
+  ├ ▶注入收尾 (Day 8-10)<span class="here"> ◀</span>
+  ├ ▶Hook 体系 (Day 11-15)
+  ├ ▶反调试与保护 (Day 16-20)
+  ├ ▶内核基础 (Day 21-26)
+  ├ ▶综合实战 (Day 27-30)
+</div>
+<nav>
+    <a href="#" data-day="f0" class="done"><span class="dot"></span>基础-1 — CE 入门 — 内存搜索与修改</a>
+    <a href="#" data-day="f1" class="done"><span class="dot"></span>基础-2 — 指针扫描 — 基址与多级偏移</a>
+    <a href="#" data-day="f2" class="done"><span class="dot"></span>基础-3 — LoadLibrary DLL 注入 — 第一个注入器</a>
+    <a href="#" data-day="1" class="done"><span class="dot"></span>Day 1 — DOS 头 + NT 头 + COFF 头</a>
+    <a href="#" data-day="2" class="done"><span class="dot"></span>Day 2 — 节表 (Section Table)</a>
+    <a href="#" data-day="3" class="done"><span class="dot"></span>Day 3 — 导入表 (Import Table)</a>
+    <a href="#" data-day="4" class="done"><span class="dot"></span>Day 4 — 导出表 + 重定位表 + 进程地址空间</a>
+    <a href="#" data-day="5" class="done"><span class="dot"></span>Day 5 — 手动映射注入 (Manual Map)</a>
+    <a href="#" data-day="6" class="done"><span class="dot"></span>Day 6 — Shellcode 注入</a>
+    <a href="#" data-day="7" class="done"><span class="dot"></span>Day 7 — SetWindowsHookEx 钩子注入</a>
+    <a href="#" data-day="8"><span class="dot"></span>Day 8 — APC 注入 (QueueUserAPC)</a>
+    <a href="#" data-day="9"><span class="dot"></span>Day 9 — 注入体系总结</a>
+    <a href="#" data-day="10"><span class="dot"></span>Day 10 — 注入检测视角</a>
+    <a href="#" data-day="11"><span class="dot"></span>Day 11 — x64 汇编 + IAT Hook</a>
+    <a href="#" data-day="12"><span class="dot"></span>Day 12 — Inline Hook</a>
+    <a href="#" data-day="13"><span class="dot"></span>Day 13 — VTable Hook</a>
+    <a href="#" data-day="14"><span class="dot"></span>Day 14 — VEH Hook + SEH 对比</a>
+    <a href="#" data-day="15"><span class="dot"></span>Day 15 — 硬件断点 (HWBP)</a>
+    <a href="#" data-day="16"><span class="dot"></span>Day 16 — 调试器原理</a>
+    <a href="#" data-day="17"><span class="dot"></span>Day 17 — 反调试基础</a>
+    <a href="#" data-day="18"><span class="dot"></span>Day 18 — 高级反调试</a>
+    <a href="#" data-day="19"><span class="dot"></span>Day 19 — 绕过反调试</a>
+    <a href="#" data-day="20"><span class="dot"></span>Day 20 — 软件保护综述</a>
+    <a href="#" data-day="21"><span class="dot"></span>Day 21 — 内核架构基础</a>
+    <a href="#" data-day="22"><span class="dot"></span>Day 22 — 内核回调机制</a>
+    <a href="#" data-day="23"><span class="dot"></span>Day 23 — SSDT Hook 原理</a>
+    <a href="#" data-day="24"><span class="dot"></span>Day 24 — 驱动通信 + 对象生命周期</a>
+    <a href="#" data-day="25"><span class="dot"></span>Day 25 — 过滤器驱动概念</a>
+    <a href="#" data-day="26"><span class="dot"></span>Day 26 — 内核对象管理</a>
+    <a href="#" data-day="27"><span class="dot"></span>Day 27 — 游戏逆向实战</a>
+    <a href="#" data-day="28"><span class="dot"></span>Day 28 — 游戏数据分析</a>
+    <a href="#" data-day="29"><span class="dot"></span>Day 29 — 反外挂分析</a>
+    <a href="#" data-day="30"><span class="dot"></span>Day 30 — 综合闭环项目</a>
+</nav>
+<div class="progress">第一阶段 Day 1-30 · 已完成 10/33 天<div class="bar"><div class="fill" style="width:30%"></div></div></div>
+<div class="log-section">
+<div class="log-title">📅 学习日志</div>
+<div class="log-entry"><div class="log-date">2026-07-29</div><div class="log-items"><div class="log-item">Day 7: SetWindowsHookEx 钩子注入 — 编译→踩坑共享段→修复→全系统实测18000+次</div><div class="log-item">网站工具化: days.json + build.js 一键生成，告别编码问题</div><div class="log-item">TestGame 重写: Win32 GDI 射击游戏，全局变量暴露关键数据</div><div class="log-item">学习日志板块 + 实操记录板块上线</div></div></div><div class="log-entry"><div class="log-date">2026-07-28</div><div class="log-items"><div class="log-item">Day 1-4: PE 格式 — DOS头/NT头/COFF头/节表/导入表/导出表/重定位表</div><div class="log-item">Day 5: 手动映射注入 (Manual Map) — 7步实现，模块列表不可见</div><div class="log-item">Day 6: Shellcode 注入 — PEB走法 + MASM汇编 + 裸字节码</div></div></div><div class="log-entry"><div class="log-date">2026-07-27</div><div class="log-items"><div class="log-item">基础-1: CE 入门 — 精确搜索、模糊搜索、数据类型</div><div class="log-item">基础-2: 指针扫描 — 基址+多级偏移、动态vs静态指针</div><div class="log-item">基础-3: LoadLibrary DLL 注入 — 第一个注入器 + 锁血 DLL</div></div></div>
+</div>
+
+</div>
+<div class="main"><div class="pc">
+
+    <div class="page active" data-day="f0">
+      <h2>基础-1 — CE 入门 — 内存搜索与修改</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; Cheat Engine 7.x</div>
+      <h3>Cheat Engine 基础操作</h3><p>Cheat Engine (CE) 是最常用的游戏内存修改工具。核心功能：附加进程 → 搜索数值 → 筛选变化 → 锁定修改。</p><h3>精确数值搜索</h3><pre><code>1. 打开 CE → 附加目标进程
+2. 输入当前数值（如 HP=100）→ 首次搜索
+3. 游戏中改变数值（掉血到 80）→ 再次搜索 80
+4. 反复筛选直到只剩几个地址
+5. 双击地址加入列表，修改数值验证</code></pre><h3>数据类型</h3><table><tr><th>类型</th><th>字节</th><th>范围</th><th>典型用途</th></tr><tr><td>Byte</td><td>1</td><td>0-255</td><td>子弹数、命数</td></tr><tr><td>2 Bytes</td><td>2</td><td>0-65535</td><td>小数值</td></tr><tr><td>4 Bytes</td><td>4</td><td>0-4.29B</td><td>血量、金币（最常用）</td></tr><tr><td>Float</td><td>4</td><td>±3.4E38</td><td>坐标、速度</td></tr><tr><td>8 Bytes</td><td>8</td><td>极大</td><td>大型数值、Double</td></tr></table><h3>模糊搜索</h3><p>不知道具体数值时用：未知初始值 → 增大/减小 → 反复筛选。适合搜索血条百分比、计时器等。</p>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>Cheat Engine 7.x, TestGame.exe</td></tr>
+          <tr><th>目标程序</th><td>TestGame - 射击练习</td></tr>
+          <tr><th>过程 & 结果</th><td>附加 TestGame 进程，首次搜索 HP=100（4 Bytes）。吃伤害后 HP 降到 95，再次搜索 95。反复 3 次后定位到唯一地址。修改数值为 999，游戏中血条立即变化。验证成功。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="f1">
+      <h2>基础-2 — 指针扫描 — 基址与多级偏移</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; Cheat Engine 指针扫描</div>
+      <h3>为什么需要指针扫描</h3><p>重启游戏后，之前找到的地址会失效——因为数据在内存中的位置每次都在变（ASLR、动态分配）。但<strong>基址不变</strong>，只需要找到从基址到数据的指针链。</p><h3>CE 指针扫描流程</h3><pre><code>1. 找到血量的动态地址
+2. 右键 → 「找出是什么访问了这个地址」
+3. 游戏中让血量变化，CE 捕获到访问指令
+4. 查看汇编：mov eax, [rcx+0x58] → 偏移 = 0x58
+5. 记录 rcx 的值，继续往上追
+6. 最终找到：TestGame.exe+0x1F4D8 → +0x0 → +0x58 = 血量</code></pre><h3>多级指针结构</h3><pre><code>[TestGame.exe + 0x1F4D8]  ← 基址（不变）
+       ↓
+    [g_pPlayer]           ← 第 1 级指针
+       ↓ +0x58
+    [HP = 100]             ← 最终数据</code></pre><h3>静态指针 vs 动态指针</h3><table><tr><th>类型</th><th>重启后</th><th>怎么找</th></tr><tr><td>动态地址</td><td>❌ 失效</td><td>每次重新搜</td></tr><tr><td>静态指针（基址+偏移）</td><td>✅ 永久有效</td><td>指针扫描 + 人工验证</td></tr></table>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>Cheat Engine 7.x, TestGame.exe</td></tr>
+          <tr><th>目标程序</th><td>TestGame — 血量 g_nHP (全局变量)</td></tr>
+          <tr><th>过程 & 结果</th><td>CE 找到血量动态地址后，使用「找出是什么访问了这个地址」捕获到 mov 指令。追踪 rcx 寄存器值，向上回溯找到基址 TestGame.exe+偏移。重启游戏验证：指针链仍然有效，CE 直接显示当前血量。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="f2">
+      <h2>基础-3 — LoadLibrary DLL 注入 — 第一个注入器</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; Visual Studio 2026, C++</div>
+      <h3>什么是 DLL 注入</h3><p>把你自己写的 DLL 塞进目标进程的地址空间，让它在目标进程内部执行代码。注入后你的 DLL 就像游戏自己的一部分——可以直接读写游戏内存。</p><h3>LoadLibrary 注入原理（最经典的注入方式）</h3><pre><code>1. OpenProcess — 打开目标进程
+2. VirtualAllocEx — 在目标进程里分配内存
+3. WriteProcessMemory — 把 DLL 路径字符串写进去
+4. CreateRemoteThread — 让目标进程调用 LoadLibraryA(你的DLL路径)
+5. Windows 加载器加载你的 DLL → DllMain 执行</code></pre><h3>注入器核心代码</h3><pre><code>HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+LPVOID pRemote = VirtualAllocEx(hProc, NULL, 4096,
+    MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+WriteProcessMemory(hProc, pRemote, dllPath,
+    strlen(dllPath) + 1, NULL);
+LPTHREAD_START_ROUTINE pLoadLibrary =
+    (LPTHREAD_START_ROUTINE)GetProcAddress(
+    GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+CreateRemoteThread(hProc, NULL, 0, pLoadLibrary,
+    pRemote, 0, NULL);</code></pre><h3>为什么注入后不需要 OpenProcess</h3><p>注入后你的 DLL 跑在游戏进程内部，和游戏共享同一个虚拟地址空间。一个普通指针就能直接读写游戏的内存——不需要跨进程 API。</p><h3>注入技术演进路线</h3><pre><code>基础-3: LoadLibrary 注入（最经典，模块列表可见）
+Day 5: 手动映射注入（模块列表不可见，更隐蔽）
+Day 6: Shellcode 注入（无 PE 头，无文件落地）
+Day 7: 钩子注入（系统被动注入，不碰目标进程）</code></pre>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>VS2026, ConsoleApplication2.exe (注入器), Dll1.dll (锁血 DLL)</td></tr>
+          <tr><th>目标程序</th><td>TestGame — 血量 g_nHP (0x1F4D8), 全局变量</td></tr>
+          <tr><th>过程 & 结果</th><td>编译注入器和 DLL。运行 TestGame，记下 PID。运行注入器输入 PID → LoadLibraryA 加载 Dll1.dll → DllMain 中 CreateThread 启动 LockHpThread → 循环将 g_nHP 写为 100。TestGame 血量锁定，CE 验证地址处数值恒为 100。这是学习路线中第一个成功的注入。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="1">
+      <h2>Day 1 — DOS 头 + NT 头 + COFF 头</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span></div>
+      <h3>PE 文件总览</h3><pre><code>+------------+
+|  DOS Header |  — 兼容 MS-DOS
++------------+
+| DOS Stub    |  — "This program cannot be run in DOS mode"
++------------+
+| PE Signature|  — "PE\0\0"，强制校验位
++------------+
+| COFF Header |  — 机器类型、有几个节
++------------+
+| Optional    |  — EntryPoint、ImageBase 等
+| Header      |
++------------+
+| Section     |  — 每个节的名称、大小
+| Table       |
++------------+
+| .text       |  — 代码节
+| .rdata      |  — 只读数据
+| .data       |  — 可读写数据
+| .reloc      |  — 重定位表
++------------+</code></pre><h3>DOS Header</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th><th>实测</th></tr><tr><td>0x00</td><td>2B</td><td>e_magic</td><td>DOS 签名 "MZ"</td><td><code>4D 5A</code></td></tr><tr><td>0x3C</td><td>4B</td><td>e_lfanew</td><td>指向 PE 签名的偏移</td><td><code>F8</code> → 0xF8</td></tr></table><h3>PE 签名</h3><p><code>50 45 00 00</code> = <strong>"PE\0\0"</strong>。从「格式选择器」退化成了「强制校验位」。</p><h3>COFF Header — 20 字节</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th><th>实测</th></tr><tr><td>0xFC</td><td>2B</td><td>Machine</td><td>x64=0x8664</td><td><code>64 86</code></td></tr><tr><td>0xFE</td><td>2B</td><td>NumberOfSections</td><td>有几个节</td><td><code>0A</code> → 10</td></tr><tr><td>0x10C</td><td>2B</td><td>SizeOfOptionalHeader</td><td>OptHeader 大小</td><td><code>F0</code> → 240B</td></tr></table><h3>PE 位数判断（三层）</h3><table><tr><th>层</th><th>字段</th><th>问题</th><th>答案</th></tr><tr><td>1</td><td>PE 签名</td><td>是 PE 格式？</td><td><code>PE\0\0</code> = 是</td></tr><tr><td>2</td><td>Machine</td><td>x86/x64？</td><td><code>0x8664</code> = x64</td></tr><tr><td>3</td><td>Magic</td><td>PE32/PE32+？</td><td><code>0x020B</code> = PE32+</td></tr></table>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>HxD</td></tr>
+          <tr><th>目标程序</th><td>Dll1.dll（自编译锁血 DLL）</td></tr>
+          <tr><th>过程 & 结果</th><td>用 HxD 逐个验证 DOS Header (MZ)、e_lfanew (0xF8)、PE 签名 (PE\0\0)、Machine (0x8664=x64)、Magic (0x020B=PE32+)。从文件头一步步数偏移，确认 0x3C → 0xF8 → PE 签名 → COFF Header 的跳转链。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="2">
+      <h2>Day 2 — 节表 (Section Table)</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span></div>
+      <h3>节表在哪</h3><pre><code>节表起始 = 0xF8 + 0x18 + 0xF0 = 0x200</code></pre><p>每项 40 字节，共 10 个节。</p><h3>节表结构（40 字节）</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th></tr><tr><td>+0x00</td><td>8B</td><td>Name</td><td>节名</td></tr><tr><td>+0x08</td><td>4B</td><td>VirtualSize</td><td>内存大小</td></tr><tr><td>+0x0C</td><td>4B</td><td>VirtualAddress</td><td>RVA</td></tr><tr><td>+0x10</td><td>4B</td><td>SizeOfRawData</td><td>文件大小</td></tr><tr><td>+0x14</td><td>4B</td><td>PointerToRawData</td><td>文件偏移</td></tr><tr><td>+0x24</td><td>4B</td><td>Characteristics</td><td>节属性</td></tr></table><h3>核心概念</h3><p><strong>PointerToRawData</strong> = 文件地址，<strong>VirtualAddress</strong> = RVA。文件和内存是两个坐标系。</p><h3>FileAlignment vs SectionAlignment</h3><table><tr><th>参数</th><th>值</th><th>含义</th></tr><tr><td>FileAlignment</td><td>0x200</td><td>文件对齐</td></tr><tr><td>SectionAlignment</td><td>0x1000</td><td>内存对齐（页）</td></tr></table><h3>常见节</h3><table><tr><th>节名</th><th>作用</th><th>为什么重要</th></tr><tr><td>.text</td><td>代码</td><td>Hook 改这里</td></tr><tr><td>.rdata</td><td>只读数据</td><td>导入/导出表</td></tr><tr><td>.data</td><td>全局变量</td><td>CE 搜的值在这</td></tr><tr><td>.reloc</td><td>重定位</td><td>ASLR 修正</td></tr></table>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>HxD</td></tr>
+          <tr><th>目标程序</th><td>Dll1.dll</td></tr>
+          <tr><th>过程 & 结果</th><td>从 0x200 开始遍历节表，数出 10 个节。验证 PointerToRawData（文件地址）和 VirtualAddress（RVA）的对应关系，理解 FileAlignment (0x200) vs SectionAlignment (0x1000)。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="3">
+      <h2>Day 3 — 导入表 (Import Table)</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span></div>
+      <h3>导入表在哪</h3><p>Optional Header 的 DataDirectory[1]，Dll1.dll 中 RVA=0x20348。</p><h3>IMAGE_IMPORT_DESCRIPTOR（20 字节）</h3><table><tr><th>字段</th><th>大小</th><th>含义</th></tr><tr><td>OriginalFirstThunk</td><td>4B</td><td>INT 的 RVA</td></tr><tr><td>TimeDateStamp</td><td>4B</td><td>绑定时间戳</td></tr><tr><td>ForwarderChain</td><td>4B</td><td>转发链</td></tr><tr><td>Name</td><td>4B</td><td>DLL 名字 RVA</td></tr><tr><td>FirstThunk</td><td>4B</td><td>IAT 的 RVA</td></tr></table><h3>INT vs IAT</h3><table><tr><th></th><th>INT</th><th>IAT</th></tr><tr><td>加载后</td><td>不变，保持函数名</td><td>被覆写为真实地址</td></tr><tr><td>比喻</td><td>购物清单</td><td>收货地址</td></tr></table><h3>IAT Hook 原理</h3><p>程序代码不变，IAT 槽位被调包——把 IAT 里的函数地址替换成你的 Hook 地址。作弊场景：Hook Present 画透视。</p>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>HxD</td></tr>
+          <tr><th>目标程序</th><td>Dll1.dll</td></tr>
+          <tr><th>过程 & 结果</th><td>定位导入表 RVA (0x20348)，手动跟 IMAGE_IMPORT_DESCRIPTOR 结构。看到 kernel32.dll、user32.dll 的导入描述符，理解 INT（购物清单）和 IAT（收货地址）的区别。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="4">
+      <h2>Day 4 — 导出表 + 重定位表 + 进程地址空间</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span></div>
+      <h3>导出表</h3><p>列出「我能给外部提供哪些函数」。GetProcAddress 运行时查导出表。</p><table><tr><th>时机</th><th>怎么找</th><th>谁来的</th></tr><tr><td>加载时</td><td>读导入表→查导出表→填 IAT</td><td>系统自动</td></tr><tr><td>运行时</td><td>GetProcAddress→查导出表</td><td>你手动调</td></tr></table><h3>重定位表</h3><p>ASLR 下 DLL 基址变了，里头的绝对地址全错了。重定位表是「需修正的地址清单」，每条 RVA 加 delta。Dll1.dll 有 3 块、28 个条目。</p><h3>进程地址空间</h3><p><strong>为什么 DLL 注入后无需 OpenProcess？</strong> 注入后 DLL 跑在游戏进程内部，共享同一虚拟地址空间——一个普通指针就能直接读写。</p><pre><code>注入前：你的进程 →[OpenProcess+WPM]→ 游戏进程
+注入后：[游戏] [你的DLL] → 指针直接访问</code></pre>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>HxD, VS2026</td></tr>
+          <tr><th>目标程序</th><td>Dll1.dll</td></tr>
+          <tr><th>过程 & 结果</th><td>验证导出表的 GetProcAddress 查找流程。理解 ASLR 下重定位表的作用——基址变了，绝对地址全错，需重定位表逐个修正。理解 DLL 注入后在目标地址空间内为何不用 OpenProcess。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="5">
+      <h2>Day 5 — 手动映射注入 (Manual Map)</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; B站「Manual Map 手动映射注入 实现原理」</div>
+      <h3>两种注入区别</h3><table><tr><th></th><th>LoadLibrary</th><th>手动映射</th></tr><tr><td>谁干活</td><td>Windows 加载器</td><td>你自己 (~200行)</td></tr><tr><td>模块列表可见？</td><td>✅</td><td>❌</td></tr><tr><td>LoadImageNotify？</td><td>✅</td><td>❌</td></tr><tr><td>CRT 可用？</td><td>✅</td><td>❌</td></tr><tr><td>隐蔽性</td><td>低</td><td>高</td></tr></table><h3>七个步骤</h3><pre><code>1. 解析 PE 头
+2. VirtualAllocEx 远程分配内存
+3. WriteProcessMemory 复制节
+4. 修正重定位表
+5. 填充 IAT
+6. 跳过 DllMain (CRT未初始化)
+7. CreateRemoteThread(基址+导出函数RVA)</code></pre><h3>extern "C" 防 mangling</h3><pre><code>extern "C" __declspec(dllexport) void LockHpThread() { }</code></pre><h3>实测</h3><pre><code>[*] PE 解析成功, SizeOfImage=0x25000
+[*] 远程内存: 0x22059d90000
+[*] 重定位: 27项 | 导入: 52项
+[+] 注入完成，模块列表不可见！</code></pre>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>VS2026, ManualMapInjector.exe</td></tr>
+          <tr><th>目标程序</th><td>ConsoleApplication1.exe (TestGame, HP=100)</td></tr>
+          <tr><th>过程 & 结果</th><td>编译运行 ManualMapInjector，输入 TestGame PID，成功将 Dll1.dll 手动映射注入。TestGame 血量锁定 100。Process Explorer 确认模块列表看不到 Dll1.dll。200 行代码实现比 LoadLibrary 更隐蔽的注入。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="6">
+      <h2>Day 6 — Shellcode 注入</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; B站「Shellcode 注入 x64 PEB」</div>
+      <h3>什么是 Shellcode</h3><p>一段裸字节码，没有 PE 加载器、没有 CRT、没有导入表。必须自己从 PEB 找到 kernel32，自己解析导出表，自己动态拿函数地址。<strong>位置无关代码 (PIC)</strong>，shellcode 被放到任意内存地址都能正确执行。</p><h3>x64 PEB 走法</h3><pre><code>GS:[0x60]         → TEB → PEB
+PEB + 0x18       → PEB_LDR_DATA
+LDR + 0x20       → InMemoryOrderModuleList
+[rax]            → 1st: exe (skip)
+[rax]            → 2nd: ntdll (skip)
+[rax]            → 3rd: kernel32  → InMemoryOrderLinks
+[rax + 0x20]     → kernel32.dll base (Win10 x64)</code></pre><h3>Shellcode 执行流程</h3><pre><code>1. PEB walk → kernel32.dll base
+2. Parse export table → find "GetProcAddress" by name
+3. GetProcAddress(kernel32, "LoadLibraryA")
+4. LoadLibraryA("user32.dll")
+5. GetProcAddress(user32, "MessageBoxA")
+6. MessageBoxA(NULL, "Hello from shellcode!", "Shellcode", MB_OK)</code></pre><h3>与手动映射的区别</h3><table><tr><th></th><th>Manual Map (Day 5)</th><th>Shellcode (Day 6)</th></tr><tr><td>载体</td><td>完整 PE 文件 (DLL)</td><td>裸字节码</td></tr><tr><td>文件落地</td><td>需要 DLL 文件</td><td>不需要任何文件</td></tr><tr><td>API 解析</td><td>自己填 IAT</td><td>自己解析导出表</td></tr><tr><td>隐蔽性</td><td>高（模块列表不可见）</td><td>更高（无文件、无模块）</td></tr></table><h3>实测结果</h3><pre><code>[*] Shellcode: 3480 bytes
+[*] PID = 22020
+[*] Remote memory: 0x00000178A33E0000
+[*] Written 3480 bytes
+[*] Remote thread created
+     → "Hello from shellcode!" ✅</code></pre>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>VS2026, ShellcodeInjector.exe, MASM (ml64.exe)</td></tr>
+          <tr><th>目标程序</th><td>ConsoleApplication1.exe (TestGame)</td></tr>
+          <tr><th>过程 & 结果</th><td>编译 shellcode.asm (MASM) + main.cpp，3480 字节 shellcode 注入 TestGame，成功弹出 'Hello from shellcode!'。验证 PEB 走法找 kernel32、手动解析导出表、LoadLibraryA 加载 user32.dll、MessageBoxA 弹窗的完整流程。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="7">
+      <h2>Day 7 — SetWindowsHookEx 钩子注入</h2>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span> &nbsp; B站「SetWindowsHookEx 全局钩子注入」</div>
+      <h3>主动注入 vs 系统被动注入</h3><p>Day 5（手动映射）和 Day 6（Shellcode）都是<strong>主动注入</strong>——你自己调 OpenProcess、VirtualAllocEx、CreateRemoteThread 把代码塞进目标进程。</p><p>Day 7 是<strong>系统被动注入</strong>——你只调用一个合法的 Win32 API 注册钩子，<strong>系统</strong>在目标进程取消息时自动把你的 DLL 拉进去。</p><h3>SetWindowsHookEx 工作流程</h3><pre><code>1. HookSetter.exe 调用 SetWindowsHookExW(WH_GETMESSAGE, GetMsgProc, hDll, 0)
+2. 系统记录：全局 WH_GETMESSAGE 钩子已注册
+3. 任何 GUI 进程调用 GetMessage/PeekMessage 取消息时：
+   → 系统自动加载 HookDll.dll
+   → 系统调用 GetMsgProc(nCode, wParam, lParam)
+   → 末尾必须调用 CallNextHookEx，传给下一个钩子</code></pre><p><strong>关键：不碰目标进程。</strong>没调 OpenProcess，没调 VirtualAllocEx，没调 CreateRemoteThread。全是系统自己的正常行为。</p><h3>代码架构</h3><p><strong>HookDll.dll</strong>：钩子回调 DLL，导出 GetMsgProc，包含共享段 (.SHARED)</p><p><strong>HookSetter.exe</strong>：LoadLibrary → GetProcAddress → SetWindowsHookEx → 消息循环 → UnhookWindowsHookEx</p><h3>共享段 (.SHARED) 踩坑</h3><table><tr><th></th><th>错误做法</th><th>正确做法</th></tr><tr><td>g_bMsgBoxShown</td><td>放共享段</td><td>每个进程独立</td></tr><tr><td>g_lTotalInjectCount</td><td>—</td><td>放共享段（跨进程计数）</td></tr></table><p>原因：共享段变量在所有进程间是同一块物理内存。后台 GUI 进程先触发 → g_bMsgBoxShown=TRUE → 你开的记事本也不弹窗。</p><h3>注入技术对比</h3><table><tr><th></th><th>LoadLibrary</th><th>手动映射</th><th>Shellcode</th><th>钩子注入</th></tr><tr><td>注入方式</td><td>主动</td><td>主动</td><td>主动</td><td>系统被动</td></tr><tr><td>触发 API</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>SetWindowsHookEx</td></tr><tr><td>模块列表可见</td><td>✅</td><td>❌</td><td>❌ 无PE头</td><td>✅</td></tr><tr><td>需要进程句柄</td><td>是</td><td>是</td><td>是</td><td><strong>否</strong></td></tr><tr><td>隐蔽性</td><td>4</td><td>1</td><td>2</td><td>3</td></tr></table><h3>实测</h3><pre><code>[+] 全局 WH_GETMESSAGE 钩子已注册！
+→ 打开记事本、浏览器等 GUI 程序 → MessageBox 弹出
+HookDll 注入 explorer、VS、WeChat 等十几个进程
+累计触发 18000+ 次</code></pre><h3>安全视角</h3><p>系统不阻止 ≠ 反作弊看不见。换 WH_KEYBOARD_LL → Keylogger ⚠️</p>
+      
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>VS2026, HookSetter.exe, HookDll.dll</td></tr>
+          <tr><th>目标程序</th><td>全局 GUI 进程（记事本、explorer、WeChat、KOOK、VS 等）</td></tr>
+          <tr><th>过程 & 结果</th><td>运行 HookSetter.exe 注册全局 WH_GETMESSAGE 钩子。打开任何 GUI 程序 → 系统自动注入 HookDll.dll → MessageBox 弹窗显示目标 PID。日志累计触发 18000+ 次。踩坑：g_bMsgBoxShown 误放在共享段，后台进程抢先触发后其他人弹窗全消失。修复：移到非共享段，每进程独立判断。</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" data-day="8">
+      <h2>Day 8 — APC 注入 (QueueUserAPC)</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>异步过程调用、Alertable State、APC 队列、Early Bird APC 原理观察</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="9">
+      <h2>Day 9 — 注入体系总结</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>LoadLibrary、Manual Map、Shellcode、Hook、APC 的统一模型和对比表</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="10">
+      <h2>Day 10 — 注入检测视角</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>DEP、ASLR、CFG、私有可执行内存、线程与模块异常观测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="11">
+      <h2>Day 11 — x64 汇编 + IAT Hook</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>Windows x64 调用约定、XMM 浮点基础、导入表地址替换</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="12">
+      <h2>Day 12 — Inline Hook</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>jmp detour、Trampoline、指令边界、原子写入和线程安全风险</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="13">
+      <h2>Day 13 — VTable Hook</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>C++ 虚函数表、对象布局、this 指针和游戏对象逆向基础</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="14">
+      <h2>Day 14 — VEH Hook + SEH 对比</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>异常型 Hook、SEH/VEH 区别、x64 .pdata/.xdata 表驱动异常</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="15">
+      <h2>Day 15 — 硬件断点 (HWBP)</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>DR0-DR7 寄存器、执行/读写断点、单步触发和反检测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="16">
+      <h2>Day 16 — 调试器原理</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>软件断点、异常分发、DebugPort、调试事件循环</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="17">
+      <h2>Day 17 — 反调试基础</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>IsDebuggerPresent、PEB.BeingDebugged、NtGlobalFlag 与结构检测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="18">
+      <h2>Day 18 — 高级反调试</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>RDTSC 计时、TLS 回调、NtQueryInformationProcess、异常差异</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="19">
+      <h2>Day 19 — 绕过反调试</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>手动 Patch、ScyllaHide 原理、反反调试思维和验证证据</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="20">
+      <h2>Day 20 — 软件保护综述</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>加壳、混淆、自修改、完整性校验、VM 保护概念</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="21">
+      <h2>Day 21 — 内核架构基础</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>Ring0/Ring3、系统调用、SSDT、用户态与内核态边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="22">
+      <h2>Day 22 — 内核回调机制</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>驱动入口、进程/线程/镜像加载回调、反外挂观测点</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="23">
+      <h2>Day 23 — SSDT Hook 原理</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>内核级 Hook、KD 调试、现代 Windows 保护边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="24">
+      <h2>Day 24 — 驱动通信 + 对象生命周期</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>IOCTL、共享内存、引用计数、IRQL、锁和并发安全</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="25">
+      <h2>Day 25 — 过滤器驱动概念</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>Minifilter、NDIS/WFP、文件与网络观测框架</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="26">
+      <h2>Day 26 — 内核对象管理</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>ObRegisterCallbacks、进程/线程句柄保护与检测边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="27">
+      <h2>Day 27 — 游戏逆向实战</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>Unity/UE 基础、vector/string/STL 最低识别、对象结构恢复</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="28">
+      <h2>Day 28 — 游戏数据分析</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>存档、资源、网络协议、IDA/Ghidra 静态分析方法论</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="29">
+      <h2>Day 29 — 反外挂分析</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>检测引擎架构、特征码、行为检测、威胁建模、服务器侧校验</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="page" data-day="30">
+      <h2>Day 30 — 综合闭环项目</h2>
+      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
+      <div class="planned-box"><h3>学习预告</h3><p>PE、注入、Hook、检测、保护和反外挂评估，输出完整报告</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      
+    </div>
+
+    <div class="nav-bar"><button id="pb" disabled>◀ 上一页</button><span class="pi" id="pi">Day 1 / 33</span><button id="nb">下一页 ▶</button></div>
+</div></div>
+<script>
+(function(){var p=document.querySelectorAll(".page");var n=document.querySelectorAll(".sidebar nav a");var b=document.getElementById("pb");var x=document.getElementById("nb");var t=document.getElementById("pi");var c=0;var l=p.length;
+function s(i){for(var j=0;j<l;j++)p[j].classList.remove("active");for(var k=0;k<n.length;k++)n[k].classList.remove("active");p[i].classList.add("active");n[i].classList.add("active");b.disabled=i===0;x.disabled=i===l-1;t.textContent="Day "+p[i].dataset.day+" / "+l}
+b.onclick=function(){if(c>0){c--;s(c)}};x.onclick=function(){if(c<l-1){c++;s(c)}};
+for(var i=0;i<n.length;i++){(function(j){n[j].onclick=function(e){e.preventDefault();c=j;s(c)}})(i)}
+document.onkeydown=function(e){if(e.key==="ArrowLeft"&&c>0){c--;s(c)}if(e.key==="ArrowRight"&&c<l-1){c++;s(c)}}})();
+</script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+{
+  "1": {
+    "title": "DOS 头 + NT 头 + COFF 头",
+    "video": "",
+    "html": "<h3>PE 文件总览</h3><pre><code>+------------+\n|  DOS Header |  — 兼容 MS-DOS\n+------------+\n| DOS Stub    |  — \"This program cannot be run in DOS mode\"\n+------------+\n| PE Signature|  — \"PE\\0\\0\"，强制校验位\n+------------+\n| COFF Header |  — 机器类型、有几个节\n+------------+\n| Optional    |  — EntryPoint、ImageBase 等\n| Header      |\n+------------+\n| Section     |  — 每个节的名称、大小\n| Table       |\n+------------+\n| .text       |  — 代码节\n| .rdata      |  — 只读数据\n| .data       |  — 可读写数据\n| .reloc      |  — 重定位表\n+------------+</code></pre><h3>DOS Header</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th><th>实测</th></tr><tr><td>0x00</td><td>2B</td><td>e_magic</td><td>DOS 签名 \"MZ\"</td><td><code>4D 5A</code></td></tr><tr><td>0x3C</td><td>4B</td><td>e_lfanew</td><td>指向 PE 签名的偏移</td><td><code>F8</code> → 0xF8</td></tr></table><h3>PE 签名</h3><p><code>50 45 00 00</code> = <strong>\"PE\\0\\0\"</strong>。从「格式选择器」退化成了「强制校验位」。</p><h3>COFF Header — 20 字节</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th><th>实测</th></tr><tr><td>0xFC</td><td>2B</td><td>Machine</td><td>x64=0x8664</td><td><code>64 86</code></td></tr><tr><td>0xFE</td><td>2B</td><td>NumberOfSections</td><td>有几个节</td><td><code>0A</code> → 10</td></tr><tr><td>0x10C</td><td>2B</td><td>SizeOfOptionalHeader</td><td>OptHeader 大小</td><td><code>F0</code> → 240B</td></tr></table><h3>PE 位数判断（三层）</h3><table><tr><th>层</th><th>字段</th><th>问题</th><th>答案</th></tr><tr><td>1</td><td>PE 签名</td><td>是 PE 格式？</td><td><code>PE\\0\\0</code> = 是</td></tr><tr><td>2</td><td>Machine</td><td>x86/x64？</td><td><code>0x8664</code> = x64</td></tr><tr><td>3</td><td>Magic</td><td>PE32/PE32+？</td><td><code>0x020B</code> = PE32+</td></tr></table>",
+    "practice": {
+      "tools": "HxD",
+      "target": "Dll1.dll（自编译锁血 DLL）",
+      "result": "用 HxD 逐个验证 DOS Header (MZ)、e_lfanew (0xF8)、PE 签名 (PE\\0\\0)、Machine (0x8664=x64)、Magic (0x020B=PE32+)。从文件头一步步数偏移，确认 0x3C → 0xF8 → PE 签名 → COFF Header 的跳转链。"
+    }
+  },
+  "2": {
+    "title": "节表 (Section Table)",
+    "video": "",
+    "html": "<h3>节表在哪</h3><pre><code>节表起始 = 0xF8 + 0x18 + 0xF0 = 0x200</code></pre><p>每项 40 字节，共 10 个节。</p><h3>节表结构（40 字节）</h3><table><tr><th>偏移</th><th>大小</th><th>字段</th><th>含义</th></tr><tr><td>+0x00</td><td>8B</td><td>Name</td><td>节名</td></tr><tr><td>+0x08</td><td>4B</td><td>VirtualSize</td><td>内存大小</td></tr><tr><td>+0x0C</td><td>4B</td><td>VirtualAddress</td><td>RVA</td></tr><tr><td>+0x10</td><td>4B</td><td>SizeOfRawData</td><td>文件大小</td></tr><tr><td>+0x14</td><td>4B</td><td>PointerToRawData</td><td>文件偏移</td></tr><tr><td>+0x24</td><td>4B</td><td>Characteristics</td><td>节属性</td></tr></table><h3>核心概念</h3><p><strong>PointerToRawData</strong> = 文件地址，<strong>VirtualAddress</strong> = RVA。文件和内存是两个坐标系。</p><h3>FileAlignment vs SectionAlignment</h3><table><tr><th>参数</th><th>值</th><th>含义</th></tr><tr><td>FileAlignment</td><td>0x200</td><td>文件对齐</td></tr><tr><td>SectionAlignment</td><td>0x1000</td><td>内存对齐（页）</td></tr></table><h3>常见节</h3><table><tr><th>节名</th><th>作用</th><th>为什么重要</th></tr><tr><td>.text</td><td>代码</td><td>Hook 改这里</td></tr><tr><td>.rdata</td><td>只读数据</td><td>导入/导出表</td></tr><tr><td>.data</td><td>全局变量</td><td>CE 搜的值在这</td></tr><tr><td>.reloc</td><td>重定位</td><td>ASLR 修正</td></tr></table>",
+    "practice": {
+      "tools": "HxD",
+      "target": "Dll1.dll",
+      "result": "从 0x200 开始遍历节表，数出 10 个节。验证 PointerToRawData（文件地址）和 VirtualAddress（RVA）的对应关系，理解 FileAlignment (0x200) vs SectionAlignment (0x1000)。"
+    }
+  },
+  "3": {
+    "title": "导入表 (Import Table)",
+    "video": "",
+    "html": "<h3>导入表在哪</h3><p>Optional Header 的 DataDirectory[1]，Dll1.dll 中 RVA=0x20348。</p><h3>IMAGE_IMPORT_DESCRIPTOR（20 字节）</h3><table><tr><th>字段</th><th>大小</th><th>含义</th></tr><tr><td>OriginalFirstThunk</td><td>4B</td><td>INT 的 RVA</td></tr><tr><td>TimeDateStamp</td><td>4B</td><td>绑定时间戳</td></tr><tr><td>ForwarderChain</td><td>4B</td><td>转发链</td></tr><tr><td>Name</td><td>4B</td><td>DLL 名字 RVA</td></tr><tr><td>FirstThunk</td><td>4B</td><td>IAT 的 RVA</td></tr></table><h3>INT vs IAT</h3><table><tr><th></th><th>INT</th><th>IAT</th></tr><tr><td>加载后</td><td>不变，保持函数名</td><td>被覆写为真实地址</td></tr><tr><td>比喻</td><td>购物清单</td><td>收货地址</td></tr></table><h3>IAT Hook 原理</h3><p>程序代码不变，IAT 槽位被调包——把 IAT 里的函数地址替换成你的 Hook 地址。作弊场景：Hook Present 画透视。</p>",
+    "practice": {
+      "tools": "HxD",
+      "target": "Dll1.dll",
+      "result": "定位导入表 RVA (0x20348)，手动跟 IMAGE_IMPORT_DESCRIPTOR 结构。看到 kernel32.dll、user32.dll 的导入描述符，理解 INT（购物清单）和 IAT（收货地址）的区别。"
+    }
+  },
+  "4": {
+    "title": "导出表 + 重定位表 + 进程地址空间",
+    "video": "",
+    "html": "<h3>导出表</h3><p>列出「我能给外部提供哪些函数」。GetProcAddress 运行时查导出表。</p><table><tr><th>时机</th><th>怎么找</th><th>谁来的</th></tr><tr><td>加载时</td><td>读导入表→查导出表→填 IAT</td><td>系统自动</td></tr><tr><td>运行时</td><td>GetProcAddress→查导出表</td><td>你手动调</td></tr></table><h3>重定位表</h3><p>ASLR 下 DLL 基址变了，里头的绝对地址全错了。重定位表是「需修正的地址清单」，每条 RVA 加 delta。Dll1.dll 有 3 块、28 个条目。</p><h3>进程地址空间</h3><p><strong>为什么 DLL 注入后无需 OpenProcess？</strong> 注入后 DLL 跑在游戏进程内部，共享同一虚拟地址空间——一个普通指针就能直接读写。</p><pre><code>注入前：你的进程 →[OpenProcess+WPM]→ 游戏进程\n注入后：[游戏] [你的DLL] → 指针直接访问</code></pre>",
+    "practice": {
+      "tools": "HxD, VS2026",
+      "target": "Dll1.dll",
+      "result": "验证导出表的 GetProcAddress 查找流程。理解 ASLR 下重定位表的作用——基址变了，绝对地址全错，需重定位表逐个修正。理解 DLL 注入后在目标地址空间内为何不用 OpenProcess。"
+    }
+  },
+  "5": {
+    "title": "手动映射注入 (Manual Map)",
+    "video": "B站「Manual Map 手动映射注入 实现原理」",
+    "html": "<h3>两种注入区别</h3><table><tr><th></th><th>LoadLibrary</th><th>手动映射</th></tr><tr><td>谁干活</td><td>Windows 加载器</td><td>你自己 (~200行)</td></tr><tr><td>模块列表可见？</td><td>✅</td><td>❌</td></tr><tr><td>LoadImageNotify？</td><td>✅</td><td>❌</td></tr><tr><td>CRT 可用？</td><td>✅</td><td>❌</td></tr><tr><td>隐蔽性</td><td>低</td><td>高</td></tr></table><h3>七个步骤</h3><pre><code>1. 解析 PE 头\n2. VirtualAllocEx 远程分配内存\n3. WriteProcessMemory 复制节\n4. 修正重定位表\n5. 填充 IAT\n6. 跳过 DllMain (CRT未初始化)\n7. CreateRemoteThread(基址+导出函数RVA)</code></pre><h3>extern \"C\" 防 mangling</h3><pre><code>extern \"C\" __declspec(dllexport) void LockHpThread() { }</code></pre><h3>实测</h3><pre><code>[*] PE 解析成功, SizeOfImage=0x25000\n[*] 远程内存: 0x22059d90000\n[*] 重定位: 27项 | 导入: 52项\n[+] 注入完成，模块列表不可见！</code></pre>",
+    "practice": {
+      "tools": "VS2026, ManualMapInjector.exe",
+      "target": "ConsoleApplication1.exe (TestGame, HP=100)",
+      "result": "编译运行 ManualMapInjector，输入 TestGame PID，成功将 Dll1.dll 手动映射注入。TestGame 血量锁定 100。Process Explorer 确认模块列表看不到 Dll1.dll。200 行代码实现比 LoadLibrary 更隐蔽的注入。"
+    }
+  },
+  "6": {
+    "title": "Shellcode 注入",
+    "video": "B站「Shellcode 注入 x64 PEB」",
+    "html": "<h3>什么是 Shellcode</h3><p>一段裸字节码，没有 PE 加载器、没有 CRT、没有导入表。必须自己从 PEB 找到 kernel32，自己解析导出表，自己动态拿函数地址。<strong>位置无关代码 (PIC)</strong>，shellcode 被放到任意内存地址都能正确执行。</p><h3>x64 PEB 走法</h3><pre><code>GS:[0x60]         → TEB → PEB\nPEB + 0x18       → PEB_LDR_DATA\nLDR + 0x20       → InMemoryOrderModuleList\n[rax]            → 1st: exe (skip)\n[rax]            → 2nd: ntdll (skip)\n[rax]            → 3rd: kernel32  → InMemoryOrderLinks\n[rax + 0x20]     → kernel32.dll base (Win10 x64)</code></pre><h3>Shellcode 执行流程</h3><pre><code>1. PEB walk → kernel32.dll base\n2. Parse export table → find \"GetProcAddress\" by name\n3. GetProcAddress(kernel32, \"LoadLibraryA\")\n4. LoadLibraryA(\"user32.dll\")\n5. GetProcAddress(user32, \"MessageBoxA\")\n6. MessageBoxA(NULL, \"Hello from shellcode!\", \"Shellcode\", MB_OK)</code></pre><h3>与手动映射的区别</h3><table><tr><th></th><th>Manual Map (Day 5)</th><th>Shellcode (Day 6)</th></tr><tr><td>载体</td><td>完整 PE 文件 (DLL)</td><td>裸字节码</td></tr><tr><td>文件落地</td><td>需要 DLL 文件</td><td>不需要任何文件</td></tr><tr><td>API 解析</td><td>自己填 IAT</td><td>自己解析导出表</td></tr><tr><td>隐蔽性</td><td>高（模块列表不可见）</td><td>更高（无文件、无模块）</td></tr></table><h3>实测结果</h3><pre><code>[*] Shellcode: 3480 bytes\n[*] PID = 22020\n[*] Remote memory: 0x00000178A33E0000\n[*] Written 3480 bytes\n[*] Remote thread created\n     → \"Hello from shellcode!\" ✅</code></pre>",
+    "practice": {
+      "tools": "VS2026, ShellcodeInjector.exe, MASM (ml64.exe)",
+      "target": "ConsoleApplication1.exe (TestGame)",
+      "result": "编译 shellcode.asm (MASM) + main.cpp，3480 字节 shellcode 注入 TestGame，成功弹出 'Hello from shellcode!'。验证 PEB 走法找 kernel32、手动解析导出表、LoadLibraryA 加载 user32.dll、MessageBoxA 弹窗的完整流程。"
+    }
+  },
+  "7": {
+    "title": "SetWindowsHookEx 钩子注入",
+    "video": "B站「SetWindowsHookEx 全局钩子注入」",
+    "html": "<h3>主动注入 vs 系统被动注入</h3><p>Day 5（手动映射）和 Day 6（Shellcode）都是<strong>主动注入</strong>——你自己调 OpenProcess、VirtualAllocEx、CreateRemoteThread 把代码塞进目标进程。</p><p>Day 7 是<strong>系统被动注入</strong>——你只调用一个合法的 Win32 API 注册钩子，<strong>系统</strong>在目标进程取消息时自动把你的 DLL 拉进去。</p><h3>SetWindowsHookEx 工作流程</h3><pre><code>1. HookSetter.exe 调用 SetWindowsHookExW(WH_GETMESSAGE, GetMsgProc, hDll, 0)\n2. 系统记录：全局 WH_GETMESSAGE 钩子已注册\n3. 任何 GUI 进程调用 GetMessage/PeekMessage 取消息时：\n   → 系统自动加载 HookDll.dll\n   → 系统调用 GetMsgProc(nCode, wParam, lParam)\n   → 末尾必须调用 CallNextHookEx，传给下一个钩子</code></pre><p><strong>关键：不碰目标进程。</strong>没调 OpenProcess，没调 VirtualAllocEx，没调 CreateRemoteThread。全是系统自己的正常行为。</p><h3>代码架构</h3><p><strong>HookDll.dll</strong>：钩子回调 DLL，导出 GetMsgProc，包含共享段 (.SHARED)</p><p><strong>HookSetter.exe</strong>：LoadLibrary → GetProcAddress → SetWindowsHookEx → 消息循环 → UnhookWindowsHookEx</p><h3>共享段 (.SHARED) 踩坑</h3><table><tr><th></th><th>错误做法</th><th>正确做法</th></tr><tr><td>g_bMsgBoxShown</td><td>放共享段</td><td>每个进程独立</td></tr><tr><td>g_lTotalInjectCount</td><td>—</td><td>放共享段（跨进程计数）</td></tr></table><p>原因：共享段变量在所有进程间是同一块物理内存。后台 GUI 进程先触发 → g_bMsgBoxShown=TRUE → 你开的记事本也不弹窗。</p><h3>注入技术对比</h3><table><tr><th></th><th>LoadLibrary</th><th>手动映射</th><th>Shellcode</th><th>钩子注入</th></tr><tr><td>注入方式</td><td>主动</td><td>主动</td><td>主动</td><td>系统被动</td></tr><tr><td>触发 API</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>SetWindowsHookEx</td></tr><tr><td>模块列表可见</td><td>✅</td><td>❌</td><td>❌ 无PE头</td><td>✅</td></tr><tr><td>需要进程句柄</td><td>是</td><td>是</td><td>是</td><td><strong>否</strong></td></tr><tr><td>隐蔽性</td><td>4</td><td>1</td><td>2</td><td>3</td></tr></table><h3>实测</h3><pre><code>[+] 全局 WH_GETMESSAGE 钩子已注册！\n→ 打开记事本、浏览器等 GUI 程序 → MessageBox 弹出\nHookDll 注入 explorer、VS、WeChat 等十几个进程\n累计触发 18000+ 次</code></pre><h3>安全视角</h3><p>系统不阻止 ≠ 反作弊看不见。换 WH_KEYBOARD_LL → Keylogger ⚠️</p>",
+    "practice": {
+      "tools": "VS2026, HookSetter.exe, HookDll.dll",
+      "target": "全局 GUI 进程（记事本、explorer、WeChat、KOOK、VS 等）",
+      "result": "运行 HookSetter.exe 注册全局 WH_GETMESSAGE 钩子。打开任何 GUI 程序 → 系统自动注入 HookDll.dll → MessageBox 弹窗显示目标 PID。日志累计触发 18000+ 次。踩坑：g_bMsgBoxShown 误放在共享段，后台进程抢先触发后其他人弹窗全消失。修复：移到非共享段，每进程独立判断。"
+    }
+  },
+  "8": {
+    "title": "APC 注入 (QueueUserAPC)",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>异步过程调用、Alertable State、APC 队列、Early Bird APC 原理观察</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "9": {
+    "title": "注入体系总结",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>LoadLibrary、Manual Map、Shellcode、Hook、APC 的统一模型和对比表</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "10": {
+    "title": "注入检测视角",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>DEP、ASLR、CFG、私有可执行内存、线程与模块异常观测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "11": {
+    "title": "x64 汇编 + IAT Hook",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>Windows x64 调用约定、XMM 浮点基础、导入表地址替换</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "12": {
+    "title": "Inline Hook",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>jmp detour、Trampoline、指令边界、原子写入和线程安全风险</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "13": {
+    "title": "VTable Hook",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>C++ 虚函数表、对象布局、this 指针和游戏对象逆向基础</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "14": {
+    "title": "VEH Hook + SEH 对比",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>异常型 Hook、SEH/VEH 区别、x64 .pdata/.xdata 表驱动异常</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "15": {
+    "title": "硬件断点 (HWBP)",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>DR0-DR7 寄存器、执行/读写断点、单步触发和反检测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "16": {
+    "title": "调试器原理",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>软件断点、异常分发、DebugPort、调试事件循环</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "17": {
+    "title": "反调试基础",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>IsDebuggerPresent、PEB.BeingDebugged、NtGlobalFlag 与结构检测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "18": {
+    "title": "高级反调试",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>RDTSC 计时、TLS 回调、NtQueryInformationProcess、异常差异</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "19": {
+    "title": "绕过反调试",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>手动 Patch、ScyllaHide 原理、反反调试思维和验证证据</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "20": {
+    "title": "软件保护综述",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>加壳、混淆、自修改、完整性校验、VM 保护概念</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "21": {
+    "title": "内核架构基础",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>Ring0/Ring3、系统调用、SSDT、用户态与内核态边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "22": {
+    "title": "内核回调机制",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>驱动入口、进程/线程/镜像加载回调、反外挂观测点</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "23": {
+    "title": "SSDT Hook 原理",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>内核级 Hook、KD 调试、现代 Windows 保护边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "24": {
+    "title": "驱动通信 + 对象生命周期",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>IOCTL、共享内存、引用计数、IRQL、锁和并发安全</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "25": {
+    "title": "过滤器驱动概念",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>Minifilter、NDIS/WFP、文件与网络观测框架</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "26": {
+    "title": "内核对象管理",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>ObRegisterCallbacks、进程/线程句柄保护与检测边界</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "27": {
+    "title": "游戏逆向实战",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>Unity/UE 基础、vector/string/STL 最低识别、对象结构恢复</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "28": {
+    "title": "游戏数据分析",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>存档、资源、网络协议、IDA/Ghidra 静态分析方法论</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "29": {
+    "title": "反外挂分析",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>检测引擎架构、特征码、行为检测、威胁建模、服务器侧校验</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "30": {
+    "title": "综合闭环项目",
+    "video": "",
+    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>PE、注入、Hook、检测、保护和反外挂评估，输出完整报告</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
+    "status": "planned"
+  },
+  "foundation": [
+    {
+      "id": "f1",
+      "title": "CE 入门 — 内存搜索与修改",
+      "video": "Cheat Engine 7.x",
+      "html": "<h3>Cheat Engine 基础操作</h3><p>Cheat Engine (CE) 是最常用的游戏内存修改工具。核心功能：附加进程 → 搜索数值 → 筛选变化 → 锁定修改。</p><h3>精确数值搜索</h3><pre><code>1. 打开 CE → 附加目标进程\n2. 输入当前数值（如 HP=100）→ 首次搜索\n3. 游戏中改变数值（掉血到 80）→ 再次搜索 80\n4. 反复筛选直到只剩几个地址\n5. 双击地址加入列表，修改数值验证</code></pre><h3>数据类型</h3><table><tr><th>类型</th><th>字节</th><th>范围</th><th>典型用途</th></tr><tr><td>Byte</td><td>1</td><td>0-255</td><td>子弹数、命数</td></tr><tr><td>2 Bytes</td><td>2</td><td>0-65535</td><td>小数值</td></tr><tr><td>4 Bytes</td><td>4</td><td>0-4.29B</td><td>血量、金币（最常用）</td></tr><tr><td>Float</td><td>4</td><td>±3.4E38</td><td>坐标、速度</td></tr><tr><td>8 Bytes</td><td>8</td><td>极大</td><td>大型数值、Double</td></tr></table><h3>模糊搜索</h3><p>不知道具体数值时用：未知初始值 → 增大/减小 → 反复筛选。适合搜索血条百分比、计时器等。</p>",
+      "practice": {
+        "tools": "Cheat Engine 7.x, TestGame.exe",
+        "target": "TestGame - 射击练习",
+        "result": "附加 TestGame 进程，首次搜索 HP=100（4 Bytes）。吃伤害后 HP 降到 95，再次搜索 95。反复 3 次后定位到唯一地址。修改数值为 999，游戏中血条立即变化。验证成功。"
+      }
+    },
+    {
+      "id": "f2",
+      "title": "指针扫描 — 基址与多级偏移",
+      "video": "Cheat Engine 指针扫描",
+      "html": "<h3>为什么需要指针扫描</h3><p>重启游戏后，之前找到的地址会失效——因为数据在内存中的位置每次都在变（ASLR、动态分配）。但<strong>基址不变</strong>，只需要找到从基址到数据的指针链。</p><h3>CE 指针扫描流程</h3><pre><code>1. 找到血量的动态地址\n2. 右键 → 「找出是什么访问了这个地址」\n3. 游戏中让血量变化，CE 捕获到访问指令\n4. 查看汇编：mov eax, [rcx+0x58] → 偏移 = 0x58\n5. 记录 rcx 的值，继续往上追\n6. 最终找到：TestGame.exe+0x1F4D8 → +0x0 → +0x58 = 血量</code></pre><h3>多级指针结构</h3><pre><code>[TestGame.exe + 0x1F4D8]  ← 基址（不变）\n       ↓\n    [g_pPlayer]           ← 第 1 级指针\n       ↓ +0x58\n    [HP = 100]             ← 最终数据</code></pre><h3>静态指针 vs 动态指针</h3><table><tr><th>类型</th><th>重启后</th><th>怎么找</th></tr><tr><td>动态地址</td><td>❌ 失效</td><td>每次重新搜</td></tr><tr><td>静态指针（基址+偏移）</td><td>✅ 永久有效</td><td>指针扫描 + 人工验证</td></tr></table>",
+      "practice": {
+        "tools": "Cheat Engine 7.x, TestGame.exe",
+        "target": "TestGame — 血量 g_nHP (全局变量)",
+        "result": "CE 找到血量动态地址后，使用「找出是什么访问了这个地址」捕获到 mov 指令。追踪 rcx 寄存器值，向上回溯找到基址 TestGame.exe+偏移。重启游戏验证：指针链仍然有效，CE 直接显示当前血量。"
+      }
+    },
+    {
+      "id": "f3",
+      "title": "LoadLibrary DLL 注入 — 第一个注入器",
+      "video": "Visual Studio 2026, C++",
+      "html": "<h3>什么是 DLL 注入</h3><p>把你自己写的 DLL 塞进目标进程的地址空间，让它在目标进程内部执行代码。注入后你的 DLL 就像游戏自己的一部分——可以直接读写游戏内存。</p><h3>LoadLibrary 注入原理（最经典的注入方式）</h3><pre><code>1. OpenProcess — 打开目标进程\n2. VirtualAllocEx — 在目标进程里分配内存\n3. WriteProcessMemory — 把 DLL 路径字符串写进去\n4. CreateRemoteThread — 让目标进程调用 LoadLibraryA(你的DLL路径)\n5. Windows 加载器加载你的 DLL → DllMain 执行</code></pre><h3>注入器核心代码</h3><pre><code>HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);\nLPVOID pRemote = VirtualAllocEx(hProc, NULL, 4096,\n    MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\nWriteProcessMemory(hProc, pRemote, dllPath,\n    strlen(dllPath) + 1, NULL);\nLPTHREAD_START_ROUTINE pLoadLibrary =\n    (LPTHREAD_START_ROUTINE)GetProcAddress(\n    GetModuleHandleA(\"kernel32.dll\"), \"LoadLibraryA\");\nCreateRemoteThread(hProc, NULL, 0, pLoadLibrary,\n    pRemote, 0, NULL);</code></pre><h3>为什么注入后不需要 OpenProcess</h3><p>注入后你的 DLL 跑在游戏进程内部，和游戏共享同一个虚拟地址空间。一个普通指针就能直接读写游戏的内存——不需要跨进程 API。</p><h3>注入技术演进路线</h3><pre><code>基础-3: LoadLibrary 注入（最经典，模块列表可见）\nDay 5: 手动映射注入（模块列表不可见，更隐蔽）\nDay 6: Shellcode 注入（无 PE 头，无文件落地）\nDay 7: 钩子注入（系统被动注入，不碰目标进程）</code></pre>",
+      "practice": {
+        "tools": "VS2026, ConsoleApplication2.exe (注入器), Dll1.dll (锁血 DLL)",
+        "target": "TestGame — 血量 g_nHP (0x1F4D8), 全局变量",
+        "result": "编译注入器和 DLL。运行 TestGame，记下 PID。运行注入器输入 PID → LoadLibraryA 加载 Dll1.dll → DllMain 中 CreateThread 启动 LockHpThread → 循环将 g_nHP 写为 100。TestGame 血量锁定，CE 验证地址处数值恒为 100。这是学习路线中第一个成功的注入。"
+      }
+    }
+  ],
+  "log": [
+    {
+      "date": "2026-07-27",
+      "items": [
+        "基础-1: CE 入门 — 精确搜索、模糊搜索、数据类型",
+        "基础-2: 指针扫描 — 基址+多级偏移、动态vs静态指针",
+        "基础-3: LoadLibrary DLL 注入 — 第一个注入器 + 锁血 DLL"
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "items": [
+        "Day 1-4: PE 格式 — DOS头/NT头/COFF头/节表/导入表/导出表/重定位表",
+        "Day 5: 手动映射注入 (Manual Map) — 7步实现，模块列表不可见",
+        "Day 6: Shellcode 注入 — PEB走法 + MASM汇编 + 裸字节码"
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "items": [
+        "Day 7: SetWindowsHookEx 钩子注入 — 编译→踩坑共享段→修复→全系统实测18000+次",
+        "网站工具化: days.json + build.js 一键生成，告别编码问题",
+        "TestGame 重写: Win32 GDI 射击游戏，全局变量暴露关键数据",
+        "学习日志板块 + 实操记录板块上线"
+      ]
+    }
+  ]
+}
