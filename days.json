@@ -71,9 +71,13 @@
   },
   "8": {
     "title": "APC 注入 (QueueUserAPC)",
-    "video": "",
-    "html": "<div class=\"planned-box\"><h3>学习预告</h3><p>异步过程调用、Alertable State、APC 队列、Early Bird APC 原理观察</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>",
-    "status": "planned"
+    "video": "VS2026, APCInjector.exe, AlertableTarget.exe",
+    "html": "<h3>APC = Asynchronous Procedure Call</h3><p>往别人线程里排队塞一个函数调用。不创建新线程，复用已有线程执行代码。类比：CreateRemoteThread = 闯进去开一桌饭，QueueUserAPC = 留张便签等他闲下来自己看。</p><h3>核心术语</h3><table><tr><th>术语</th><th>含义</th><th>类比</th></tr><tr><td>APC 队列</td><td>每个线程一根挂便签的绳子</td><td>便签墙</td></tr><tr><td>QueueUserAPC</td><td>往别人绳子上挂便签</td><td>贴便签</td></tr><tr><td>Alertable State</td><td>线程说\"我现在有空看便签\"</td><td>翻便签</td></tr><tr><td>KiDeliverApc</td><td>内核取便签、执行回调</td><td>看到便签去开会</td></tr></table><h3>Alertable State 触发 API</h3><p>末尾有 <code>Ex</code> 且第二个参数 <code>TRUE</code>：<code>SleepEx</code>、<code>WaitForSingleObjectEx</code>、<code>WaitForMultipleObjectsEx</code>、<code>MsgWaitForMultipleObjectsEx</code>、<code>SignalObjectAndWait</code></p><p><strong>GetMessage 不进入 Alertable State</strong> — 这是 APC 注入最常见的失败原因。</p><h3>APC 三种类型（弱→强）</h3><pre><code>User Mode APC  &lt;  Normal Kernel APC  &lt;  Special Kernel APC\n(QueueUserAPC)     (驱动才能用)         (驱动强制执行)</code></pre><h3>注入流程</h3><pre><code>1. OpenProcess → 打开目标进程\n2. VirtualAllocEx → 远程分配内存\n3. WriteProcessMemory → 写入 DLL 路径（宽字符）\n4. CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD) → 遍历线程\n5. 对每个目标 PID 的线程: OpenThread → QueueUserAPC(pLoadLibraryW, hThread, pDllPath)\n6. 等线程进入 Alertable State → 内核取出 APC → LoadLibraryW 执行 → DllMain</code></pre><h3>实验 A：TestGame（失败）</h3><p>APCInjector → TestGame：APC 排队成功，但 <code>GetMessageW</code> 不进入 Alertable State，APC 永远不触发，Dll1.dll 不加载。</p><h3>实验 B：AlertableTarget（成功）</h3><p>AlertableTarget 创建 2 个线程分别调用 <code>SleepEx(1000, TRUE)</code> 和 <code>WaitForSingleObjectEx(..., TRUE)</code>。APCInjector 注入 → APC 立即触发 → Dll1.dll 加载成功。</p><h3>六种注入对比</h3><table><tr><th></th><th>LoadLibrary</th><th>ManualMap</th><th>Shellcode</th><th>Hook</th><th>APC</th></tr><tr><td>触发方式</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>CreateRemoteThread</td><td>系统消息机制</td><td>线程 Alertable Wait</td></tr><tr><td>新线程</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr><tr><td>模块列表</td><td>可见</td><td>不可见</td><td>无PE头</td><td>可见</td><td>可见</td></tr><tr><td>需要句柄</td><td>是</td><td>是</td><td>是</td><td>否</td><td>是</td></tr><tr><td>硬前提</td><td>—</td><td>—</td><td>—</td><td>消息循环</td><td><strong>Alertable State</strong></td></tr></table><h3>踩坑记录</h3><table><tr><th>坑</th><th>现象</th><th>原因</th><th>修复</th></tr><tr><td>GetMessage 不触发</td><td>APC 排队成功，DLL 永不加载</td><td>GetMessage 不进入 Alertable State</td><td>需目标线程调用 *Ex 系列 API</td></tr><tr><td>LoadLibraryA + 中文路径</td><td>LoadLibraryA 返回 NULL</td><td>ANSI 编码不认中文字符</td><td>改用 LoadLibraryW + 宽字符串</td></tr><tr><td>MSVC 源码编码</td><td>宽字符串中文变乱码</td><td>.cpp 是 UTF-8，编译器按 GBK 读</td><td>加编译选项 /utf-8</td></tr></table>",
+    "practice": {
+      "tools": "VS2026, APCInjector.exe, AlertableTarget.exe, Process Explorer",
+      "target": "ConsoleApplication1.exe (失败) / AlertableTarget.exe (成功)",
+      "result": "实验 A：APCInjector 对 TestGame 排队 14 个 APC，但 GetMessage 不 Alertable，Dll1.dll 不加载，血量不锁。实验 B：APCInjector 对 AlertableTarget 排队，SleepEx 线程立即触发 APC，LoadLibraryW 加载 Dll1.dll 成功。用 ExitProcess 作为 payload 验证 APC 机制本身正常，确认问题出在 Alertable State 前提条件。"
+    }
   },
   "9": {
     "title": "注入体系总结",
@@ -243,6 +247,14 @@
     }
   ],
   "log": [
+    {
+      "date": "2026-07-31",
+      "items": [
+        "Day 8: APC 注入 (QueueUserAPC) — Alertable State 硬前提，实验 A/B 对比验证",
+        "踩坑：LoadLibraryA 不能处理中文路径，改用 LoadLibraryW；MSVC UTF-8 源文件需 /utf-8",
+        "新增 APCInjector + AlertableTarget 项目，统一输出到 学习/x64/Debug/"
+      ]
+    },
     {
       "date": "2026-07-27",
       "items": [

@@ -3,8 +3,8 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-07-30T18:15:00+08:00  
-status: in-progress  
+last_updated: 2026-07-31T01:30:00+08:00
+status: in-progress
 ---  
 
 # Session Progress — Windows 逆向学习  
@@ -18,7 +18,7 @@ status: in-progress
 - [x] <!-- id:t_inject_manual dep:none --> Day 5: 手动映射注入 (Manual Map, 模块列表不可见)  
 - [x] <!-- id:t_inject_shellcode dep:none --> Day 6: Shellcode 注入 (PEB走法 + MASM)  
 - [x] <!-- id:t_inject_hook dep:none --> Day 7: SetWindowsHookEx 钩子注入 (系统被动注入)  
-- [ ] <!-- id:t_inject_apc dep:t_inject_hook --> Day 8: APC 注入 (QueueUserAPC)  
+- [x] <!-- id:t_inject_apc dep:t_inject_hook --> Day 8: APC 注入 (QueueUserAPC)  
 
 **阶段一：注入收尾 (8-10)**  
 - [ ] <!-- id:t_inject_summary dep:t_inject_apc --> Day 9: 注入体系总结 — 六种方式对比表 + 统一分析五问 + 线程劫持原理  
@@ -65,10 +65,10 @@ status: in-progress
 
 ## Current Status  
 
-进度: 7/30 (23%) — 第一阶段  
+进度: 8/30 (27%) — 第一阶段  
 路线: GPT-5.5 制定 Day 8-60 完整路线，Codex 逐课落地教学  
-正在: Day 8 APC 注入 — 待开始  
-下一步: 学 APC 机制 (异步过程调用/Alertable State/QueueUserAPC)  
+正在: Day 9 注入体系总结 — 待开始  
+下一步: 六种注入方式对比表 + 统一分析五问 + 线程劫持原理
 
 ## Decisions  
 
@@ -78,7 +78,8 @@ status: in-progress
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 14 加入 SEH vs VEH 对比 + x64 表驱动异常（.pdata/.xdata）  
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 24 加入内核对象生命周期/引用计数/IRQL安全意识  
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 27 加入 STL 容器最低识别（vector<Entity*>/string/简单继承）  
-- <!-- at:2026-07-30T18:15:00+08:00 --> 每日输出强制包含: 实验环境/已验证结论/推测结论/调试证据/失败实验/版本信息  
+- <!-- at:2026-07-30T18:15:00+08:00 --> 每日输出强制包含: 实验环境/已验证结论/推测结论/调试证据/失败实验/版本信息
+- <!-- at:2026-07-31T01:30:00+08:00 --> Day 8 APC 注入完成。核心教训：APC 注入必须目标线程进入 Alertable State（SleepEx/WaitFor*Ex + TRUE），GetMessage 消息循环不触发。LoadLibraryA 无法处理中文路径，必须用 LoadLibraryW。MSVC 源文件 UTF-8 需加 /utf-8 编译选项。  
 
 ## Key Paths  
 
