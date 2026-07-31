@@ -61,8 +61,8 @@ pre code{background:none;padding:0;color:inherit}
 <div class="sub">Windows 逆向 · 游戏安全</div>
 <div class="roadmap">▶前期基础<span class="done"> ✅</span>
 ▶PE 格式 (Day 1-4)<span class="done"> ✅</span>
-  ├ ▶注入收尾 (Day 8-10)<span class="here"> ◀</span>
-  ├ ▶Hook 体系 (Day 11-15)
+  ├ ▶注入收尾 (Day 8-10)<span class="done"> ✅</span>
+  ├ ▶Hook 体系 (Day 11-15)<span class="here"> ◀</span>
   ├ ▶反调试与保护 (Day 16-20)
   ├ ▶内核基础 (Day 21-26)
   ├ ▶综合实战 (Day 27-30)
@@ -80,7 +80,7 @@ pre code{background:none;padding:0;color:inherit}
     <a href="#" data-day="7" class="done"><span class="dot"></span>Day 7 — SetWindowsHookEx 钩子注入</a>
     <a href="#" data-day="8" class="done"><span class="dot"></span>Day 8 — APC 注入 (QueueUserAPC)</a>
     <a href="#" data-day="9" class="done"><span class="dot"></span>Day 9 — 注入体系总结</a>
-    <a href="#" data-day="10"><span class="dot"></span>Day 10 — 注入检测视角</a>
+    <a href="#" data-day="10" class="done"><span class="dot"></span>Day 10 — 注入检测视角</a>
     <a href="#" data-day="11"><span class="dot"></span>Day 11 — x64 汇编 + IAT Hook</a>
     <a href="#" data-day="12"><span class="dot"></span>Day 12 — Inline Hook</a>
     <a href="#" data-day="13"><span class="dot"></span>Day 13 — VTable Hook</a>
@@ -102,7 +102,7 @@ pre code{background:none;padding:0;color:inherit}
     <a href="#" data-day="29"><span class="dot"></span>Day 29 — 反外挂分析</a>
     <a href="#" data-day="30"><span class="dot"></span>Day 30 — 综合闭环项目</a>
 </nav>
-<div class="progress">第一阶段 Day 1-30 · 已完成 12/33 天<div class="bar"><div class="fill" style="width:36%"></div></div></div>
+<div class="progress">第一阶段 Day 1-30 · 已完成 13/33 天<div class="bar"><div class="fill" style="width:39%"></div></div></div>
 <div class="log-section">
 <div class="log-title">📅 学习日志</div>
 <div class="log-entry"><div class="log-date">2026-07-29</div><div class="log-items"><div class="log-item">Day 7: SetWindowsHookEx 钩子注入 — 编译→踩坑共享段→修复→全系统实测18000+次</div><div class="log-item">网站工具化: days.json + build.js 一键生成，告别编码问题</div><div class="log-item">TestGame 重写: Win32 GDI 射击游戏，全局变量暴露关键数据</div><div class="log-item">学习日志板块 + 实操记录板块上线</div></div></div><div class="log-entry"><div class="log-date">2026-07-28</div><div class="log-items"><div class="log-item">Day 1-4: PE 格式 — DOS头/NT头/COFF头/节表/导入表/导出表/重定位表</div><div class="log-item">Day 5: 手动映射注入 (Manual Map) — 7步实现，模块列表不可见</div><div class="log-item">Day 6: Shellcode 注入 — PEB走法 + MASM汇编 + 裸字节码</div></div></div><div class="log-entry"><div class="log-date">2026-07-27</div><div class="log-items"><div class="log-item">基础-1: CE 入门 — 精确搜索、模糊搜索、数据类型</div><div class="log-item">基础-2: 指针扫描 — 基址+多级偏移、动态vs静态指针</div><div class="log-item">基础-3: LoadLibrary DLL 注入 — 第一个注入器 + 锁血 DLL</div></div></div><div class="log-entry"><div class="log-date">2026-07-31</div><div class="log-items"><div class="log-item">Day 8: APC 注入 (QueueUserAPC) — Alertable State 硬前提，实验 A/B 对比验证</div><div class="log-item">Day 9: 注入体系总结 — 六种方式对比、统一分析五问、线程劫持原理与反作弊证据链</div><div class="log-item">踩坑：LoadLibraryA 不能处理中文路径，改用 LoadLibraryW；MSVC UTF-8 源文件需 /utf-8</div><div class="log-item">新增 APCInjector + AlertableTarget 项目，统一输出到 学习/x64/Debug/</div><div class="log-item">笔记优化：前期基础与 Day 1-8 补齐复习锚点、验证证据、误区排查、逆向/防御视角和官方资料方向</div></div></div>
@@ -381,9 +381,21 @@ HookDll 注入 explorer、VS、WeChat 等十几个进程
 
     <div class="page" data-day="10">
       <h2>Day 10 — 注入检测视角</h2>
-      <div class="day-meta"><span class="tag" style="background:#e9ecef;color:#6c757d">⏳ 计划中</span></div>
-      <div class="planned-box"><h3>学习预告</h3><p>DEP、ASLR、CFG、私有可执行内存、线程与模块异常观测</p><p>这一课还没正式开始，学完后会补充完整原理、实验记录、调试证据和失败踩坑。</p></div>
+      <div class="day-meta"><span class="tag tag-done">✅ 已完成</span></div>
+      <h3>本课要解决什么</h3><p>不要把 RWX 当作唯一注入规则。检测要把模块、内存区域、线程入口和行为历史组合成证据链，区分可疑现象与更可靠的执行证据。</p><h3>30 秒核心结论</h3><p><strong>私有可执行内存本身只是线索；线程从其中启动才是强执行证据。没有 RWX 也不能证明安全，因为载荷可先写入 RW 内存，再改为 RX 后执行。</strong></p><h3>DEP / ASLR / CFG 各自限制什么</h3><table><tr><th>机制</th><th>限制对象</th><th>对注入或控制流攻击的意义</th></tr><tr><td>DEP</td><td>数据页能否执行</td><td>阻止把普通 RW 数据页直接当机器码运行；攻击者仍可能申请或改成可执行页。</td></tr><tr><td>ASLR</td><td>模块加载地址的可预测性</td><td>让硬编码函数地址、固定 gadget 或部分 ROP 链不可靠；运行时泄露或解析实际地址后仍可能绕过。</td></tr><tr><td>CFG</td><td>间接调用/跳转的合法目标</td><td>限制控制流跳到未允许的目标地址；它不负责检测所有注入，而是增加任意跳转的难度。</td></tr></table><h3>检测证据链</h3><pre><code>可疑私有内存出现
+  -> 写入载荷（若能观测）
+  -> RW 改为 RX/RWX（若能观测）
+  -> 线程从该地址启动，或控制流进入该地址
+  -> 结合进程句柄、模块和调用上下文定性</code></pre><table><tr><th>观察</th><th>说明</th><th>误区</th></tr><tr><td>RWX 内存</td><td>可写后立即执行，值得关注</td><td>JIT、调试器等正常组件也可能使用，不能单独定性。</td></tr><tr><td>MEM_PRIVATE + RX</td><td>不属于普通已加载映像模块的可执行区域</td><td>只能说明来源值得核查，尚不等于攻击。</td></tr><tr><td>线程起始地址落入该区域</td><td>该私有内存实际承担了执行入口</td><td>这是强信号，仍应结合进程用途和时间线排除误报。</td></tr></table><h3>反注入思路</h3><p>典型远程线程链是：获取目标进程高危句柄 -> 写入内存 -> 修改执行权限 -> 创建或劫持线程。防守应优先控制前端的高权限句柄，遵循最小权限原则，并监控写内存、改保护属性和创建线程等组合行为。单独的只读进程内存权限常用于诊断或扫描，不能据此直接定性。</p><h3>本次验证与边界</h3><p><strong>已验证（课堂推理与验收）：</strong>能区分 DEP、ASLR、CFG 的职责；能解释 RW -> RX 为什么会绕过仅扫描 RWX 的规则；能说明 MEM_PRIVATE + RX 与线程入口组合为何更可疑。</p><p><strong>尚未实测：</strong>本课未运行实时进程枚举、内存权限监控或调试器验证，因此没有把推理结论写成特定进程的实测结果。</p><h3>常见误区</h3><p>“没看到 RWX 就安全”是错误结论。先写 RW、再改 RX 的载荷在最终快照中可能只留下 RX；检测应尽量结合权限变化历史和线程执行位置。</p><h3>与前后课程的关联</h3><p>Day 5-9 的各种注入方式提供了不同的代码载体和执行入口；本课从模块、内存、线程和时间线反推它们。Day 11 将学习 x64 调用约定与 IAT Hook，为理解间接调用、函数指针和 CFG 的边界补足基础。</p><h3>资料方向</h3><p>Microsoft Learn：Data Execution Prevention、Control Flow Guard、进程安全和虚拟内存保护文档。结论受 Windows 版本、进程缓解策略及应用自身行为影响。</p>
       
+      <div class="practice-box">
+        <h3>🛠 实操记录</h3>
+        <table>
+          <tr><th style="width:80px">使用工具</th><td>课堂推理与验收题</td></tr>
+          <tr><th>目标程序</th><td>构建注入检测的证据链</td></tr>
+          <tr><th>过程 & 结果</th><td>完成 DEP/ASLR/CFG 职责辨析；解释 RW -> RX 载荷为何可避开单纯 RWX 快照扫描；判断 MEM_PRIVATE + RX 与线程入口组合为高可疑信号；说明高危进程句柄的最小权限与监控价值。未进行实时进程枚举或调试器实验。</td></tr>
+        </table>
+      </div>
     </div>
 
     <div class="page" data-day="11">

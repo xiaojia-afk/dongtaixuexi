@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-07-31T16:01:16+08:00
+last_updated: 2026-07-31T16:25:00+08:00
 status: in-progress
 ---  
 
@@ -22,7 +22,7 @@ status: in-progress
 
 **阶段一：注入收尾 (8-10)**  
 - [x] <!-- id:t_inject_summary dep:t_inject_apc --> Day 9: 注入体系总结 — 六种方式对比表 + 统一分析五问 + 线程劫持原理
-- [ ] <!-- id:t_detect dep:t_inject_summary --> Day 10: 注入检测视角 — DEP/ASLR/CFG + 反注入思路  
+- [x] <!-- id:t_detect dep:t_inject_summary --> Day 10: 注入检测视角 — DEP/ASLR/CFG + 反注入思路  
 
 **阶段二：Hook 体系 (11-15)**  
 - [ ] <!-- id:t_hook_iat dep:t_detect --> Day 11: x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址  
@@ -65,10 +65,10 @@ status: in-progress
 
 ## Current Status  
 
-进度: 9/30 (30%) — 第一阶段
+进度: 10/30 (33%) — 第一阶段
 路线: GPT-5.5 制定 Day 8-60 完整路线，Codex 逐课落地教学  
-正在: Day 9 注入体系总结 — 已完成，笔记网站已整理
-下一步: Day 10 注入检测视角 — DEP/ASLR/CFG + 反注入思路
+正在: Day 10 注入检测视角 — 已完成（概念推理与验收；未做实时枚举实验）
+下一步: Day 11 x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址
 
 ## Decisions  
 
@@ -85,6 +85,7 @@ status: in-progress
 - <!-- at:2026-07-31T15:26:59+08:00 --> 已一次性升级前期基础与 Day 1-8 的正式笔记：保留原实验记录，补齐复习锚点、验证证据、误区排查、关联/防御视角和版本/资料方向；网站已重新生成。
 - <!-- at:2026-07-31T15:50:48+08:00 --> 已建立 Codex/Reasonix/OpenCode 的学习闭环配置：验收通过后自动更新进度与笔记、生成校验网站并仅提交指定学习文件；提示词 EXE 已重建以携带同一规则。
 - <!-- at:2026-07-31T16:01:16+08:00 --> 学习闭环升级为完成条件驱动：老师在教学中自动追踪概念复述、实验证据/失败诊断、误区/防御视角和验收；最后一个学习条件满足时主动发验收题，验收通过后自动收尾，无需用户宣布完成。
+- <!-- at:2026-07-31T16:25:00+08:00 --> Day 10 注入检测视角完成：DEP 限制数据页执行，ASLR 随机化加载地址，CFG 校验间接控制流目标；检测应关联模块、私有可执行内存、线程入口和权限/写入历史，不能因未见 RWX 就判定安全。课程采用概念推理验收，尚未进行实时进程枚举实验。
 
 ## Key Paths  
 
