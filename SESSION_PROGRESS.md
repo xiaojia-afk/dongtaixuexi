@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-07-31T16:25:00+08:00
+last_updated: 2026-08-01T00:45:37+08:00
 status: in-progress
 ---  
 
@@ -25,7 +25,7 @@ status: in-progress
 - [x] <!-- id:t_detect dep:t_inject_summary --> Day 10: 注入检测视角 — DEP/ASLR/CFG + 反注入思路  
 
 **阶段二：Hook 体系 (11-15)**  
-- [ ] <!-- id:t_hook_iat dep:t_detect --> Day 11: x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址  
+- [x] <!-- id:t_hook_iat dep:t_detect --> Day 11: x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址
 - [ ] <!-- id:t_hook_inline dep:t_hook_iat --> Day 12: Inline Hook — jmp detour/5字节/Trampoline/原子写入  
 - [ ] <!-- id:t_hook_vtable dep:t_hook_inline --> Day 13: VTable Hook — C++虚函数表替换 + 对象逆向基础  
 - [ ] <!-- id:t_hook_veh dep:t_hook_vtable --> Day 14: VEH Hook + SEH对比 — 向量化异常处理 + SEH机制 + x64表驱动异常(.pdata/.xdata)  
@@ -65,13 +65,14 @@ status: in-progress
 
 ## Current Status  
 
-进度: 10/30 (33%) — 第一阶段
+进度: 11/30 (37%) — 第一阶段
 路线: GPT-5.5 制定 Day 8-60 完整路线，Codex 逐课落地教学  
-正在: Day 10 注入检测视角 — 已完成（概念推理与验收；未做实时枚举实验）
-下一步: Day 11 x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址
+正在: Day 11 x64 汇编 + IAT Hook — 已完成（实验+调试验证+验收通过）
+下一步: Day 12 Inline Hook — jmp detour/5字节/Trampoline/原子写入
 
 ## Decisions  
 
+- <!-- at:2026-07-31T23:40:00+08:00 --> Day 11 x64 汇编 + IAT Hook 完成。核心模型：IAT 槽位=8字节格子存地址；Hook=换格子里的地址，程序 call [槽位] 即跳进 Hook 函数。调试验证：寄存器 RDX/R8/R9 实测参数传递（规则1），调用栈 main → MyMessageBoxA 证明 IAT 被调包，弹窗内容被篡改证明 Hook 函数先执行再调原函数。
 - <!-- at:2026-07-30T18:15:00+08:00 --> GPT-5.5 负责大方向规划，Codex 负责逐课教学+写代码。路线扩展为两阶段：第一阶段 Day 1-30（6个阶段），第二阶段 Day 31-60（8个阶段）  
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 10 之后不再以"会多少种注入"为进度指标，而以"能否解释执行链/能用调试器验证/能分析检测与误报"为标准  
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 11 加入 SSE/XMM 浮点基础（movss寄存器传参），避免分析游戏坐标时卡住  
@@ -86,6 +87,12 @@ status: in-progress
 - <!-- at:2026-07-31T15:50:48+08:00 --> 已建立 Codex/Reasonix/OpenCode 的学习闭环配置：验收通过后自动更新进度与笔记、生成校验网站并仅提交指定学习文件；提示词 EXE 已重建以携带同一规则。
 - <!-- at:2026-07-31T16:01:16+08:00 --> 学习闭环升级为完成条件驱动：老师在教学中自动追踪概念复述、实验证据/失败诊断、误区/防御视角和验收；最后一个学习条件满足时主动发验收题，验收通过后自动收尾，无需用户宣布完成。
 - <!-- at:2026-07-31T16:25:00+08:00 --> Day 10 注入检测视角完成：DEP 限制数据页执行，ASLR 随机化加载地址，CFG 校验间接控制流目标；检测应关联模块、私有可执行内存、线程入口和权限/写入历史，不能因未见 RWX 就判定安全。课程采用概念推理验收，尚未进行实时进程枚举实验。
+- <!-- at:2026-08-01T00:05:00+08:00 --> Day 11 的 IATHook 已从错误的独立目录迁入 `学习\Dll1\IATHook`，加入 `学习.sln`，并修复了构建脚本路径、导入表 `OriginalFirstThunk` 回退与 `VirtualProtect` 错误检查；Day 11 尚未完成，必须等待用户实际运行验证。
+- <!-- at:2026-08-01T00:05:00+08:00 --> 长期协作规则新增教学自检与学习代码工程约定：先确认前置知识/路径/范围，区分实测与推理；学习项目归入 `Dll1\学习.sln`，Release 运行包与调试产物分离。
+- <!-- at:2026-08-01T00:22:00+08:00 --> 已审阅一份历史教学对话导出：它只能补充用户偏好与失败模式，不能覆盖当前进度。规则新增明确交接边界、连续工具失败的止损机制，以及禁止让用户充当命令转发者。
+- <!-- at:2026-08-01T00:23:57+08:00 --> IATHook Release x64 构建通过（0 警告、0 错误）；统一 Release 目录仅保留 `IATHook.exe`，早期 Debug 版 exe/PDB 已清理。尚未由用户实际运行验证。
+- <!-- at:2026-08-01T00:37:27+08:00 --> 已完成笔记网站审阅与生成器优化：课程进度统一显示 Day 10/30（基础单独计数），路线图补齐 Day 5-7，移动端侧栏改为顶部可滚动导航；Day 9 新增“复习入口”以明确证据边界、常见误区与 Day 10/11 的关联。已验证 days.json、生成页与 git diff --check；未发布，Day 11 仍等待运行验证。
+- <!-- at:2026-08-01T00:45:37+08:00 --> Day 11 最小 IAT Hook 实验成功：首个 MessageBoxA 为 Hook 前对照；IAT 槽位从 user32!MessageBoxA 改为 exe 内 MyMessageBoxA；第二次弹窗正文被修改，控制台输出 Hook 命中，无崩溃/乱码。下一缺口是调试器证据、练习和验收，Day 11 保持进行中。
 
 ## Key Paths  
 
