@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-07-31T01:30:00+08:00
+last_updated: 2026-07-31T15:26:59+08:00
 status: in-progress
 ---  
 
@@ -21,7 +21,7 @@ status: in-progress
 - [x] <!-- id:t_inject_apc dep:t_inject_hook --> Day 8: APC 注入 (QueueUserAPC)  
 
 **阶段一：注入收尾 (8-10)**  
-- [ ] <!-- id:t_inject_summary dep:t_inject_apc --> Day 9: 注入体系总结 — 六种方式对比表 + 统一分析五问 + 线程劫持原理  
+- [x] <!-- id:t_inject_summary dep:t_inject_apc --> Day 9: 注入体系总结 — 六种方式对比表 + 统一分析五问 + 线程劫持原理
 - [ ] <!-- id:t_detect dep:t_inject_summary --> Day 10: 注入检测视角 — DEP/ASLR/CFG + 反注入思路  
 
 **阶段二：Hook 体系 (11-15)**  
@@ -65,10 +65,10 @@ status: in-progress
 
 ## Current Status  
 
-进度: 8/30 (27%) — 第一阶段  
+进度: 9/30 (30%) — 第一阶段
 路线: GPT-5.5 制定 Day 8-60 完整路线，Codex 逐课落地教学  
-正在: Day 9 注入体系总结 — 待开始  
-下一步: 六种注入方式对比表 + 统一分析五问 + 线程劫持原理
+正在: Day 9 注入体系总结 — 已完成，笔记网站已整理
+下一步: Day 10 注入检测视角 — DEP/ASLR/CFG + 反注入思路
 
 ## Decisions  
 
@@ -80,6 +80,9 @@ status: in-progress
 - <!-- at:2026-07-30T18:15:00+08:00 --> Day 27 加入 STL 容器最低识别（vector<Entity*>/string/简单继承）  
 - <!-- at:2026-07-30T18:15:00+08:00 --> 每日输出强制包含: 实验环境/已验证结论/推测结论/调试证据/失败实验/版本信息
 - <!-- at:2026-07-31T01:30:00+08:00 --> Day 8 APC 注入完成。核心教训：APC 注入必须目标线程进入 Alertable State（SleepEx/WaitFor*Ex + TRUE），GetMessage 消息循环不触发。LoadLibraryA 无法处理中文路径，必须用 LoadLibraryW。MSVC 源文件 UTF-8 需加 /utf-8 编译选项。  
+- <!-- at:2026-07-31T12:30:00+08:00 --> Day 9 注入体系总结完成并由 Codex 维护笔记网站。核心模型：先按代码载体、执行入口、Loader 责任、可见证据分析；防御侧以模块/内存/线程/上下文异常反推注入家族。
+- <!-- at:2026-07-31T12:45:00+08:00 --> 日常网站维护仍由 DS 执行；已在长期规则文件加入复习导向的笔记质量标准与生成校验流程，Codex 仅在明确请求时审阅或维护。
+- <!-- at:2026-07-31T15:26:59+08:00 --> 已一次性升级前期基础与 Day 1-8 的正式笔记：保留原实验记录，补齐复习锚点、验证证据、误区排查、关联/防御视角和版本/资料方向；网站已重新生成。
 
 ## Key Paths  
 
