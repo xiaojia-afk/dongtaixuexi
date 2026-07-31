@@ -263,16 +263,6 @@
   ],
   "log": [
     {
-      "date": "2026-07-31",
-      "items": [
-        "Day 8: APC 注入 (QueueUserAPC) — Alertable State 硬前提，实验 A/B 对比验证",
-        "Day 9: 注入体系总结 — 六种方式对比、统一分析五问、线程劫持原理与反作弊证据链",
-        "踩坑：LoadLibraryA 不能处理中文路径，改用 LoadLibraryW；MSVC UTF-8 源文件需 /utf-8",
-        "新增 APCInjector + AlertableTarget 项目，统一输出到 学习/x64/Debug/",
-        "笔记优化：前期基础与 Day 1-8 补齐复习锚点、验证证据、误区排查、逆向/防御视角和官方资料方向"
-      ]
-    },
-    {
       "date": "2026-07-27",
       "items": [
         "基础-1: CE 入门 — 精确搜索、模糊搜索、数据类型",
@@ -295,6 +285,16 @@
         "网站工具化: days.json + build.js 一键生成，告别编码问题",
         "TestGame 重写: Win32 GDI 射击游戏，全局变量暴露关键数据",
         "学习日志板块 + 实操记录板块上线"
+      ]
+    },
+    {
+      "date": "2026-07-31",
+      "items": [
+        "Day 8: APC 注入 (QueueUserAPC) — Alertable State 硬前提，实验 A/B 对比验证",
+        "Day 9: 注入体系总结 — 六种方式对比、统一分析五问、线程劫持原理与反作弊证据链",
+        "踩坑：LoadLibraryA 不能处理中文路径，改用 LoadLibraryW；MSVC UTF-8 源文件需 /utf-8",
+        "新增 APCInjector + AlertableTarget 项目，统一输出到 学习/x64/Debug/",
+        "笔记优化：前期基础与 Day 1-8 补齐复习锚点、验证证据、误区排查、逆向/防御视角和官方资料方向"
       ]
     }
   ]

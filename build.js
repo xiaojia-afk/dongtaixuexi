@@ -189,7 +189,7 @@ ${navItems}</nav>
 <div class="progress">课程 Day：${completedDayCount}/30 · 前期基础：${foundation.length}/${foundation.length}<div class="bar"><div class="fill" style="width:${progressPct}%"></div></div></div>
 <div class="log-section">
 <div class="log-title">📅 学习日志</div>
-${data.log ? data.log.slice().reverse().map(function(entry) { return `<div class="log-entry"><div class="log-date">${entry.date}</div><div class="log-items">${entry.items.map(function(item) { return `<div class="log-item">${item}</div>`; }).join("")}</div></div>`; }).join("") : ""}
+${data.log ? data.log.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0}).reverse().map(function(entry) { return `<div class="log-entry"><div class="log-date">${entry.date}</div><div class="log-items">${entry.items.map(function(item) { return `<div class="log-item">${item}</div>`; }).join("")}</div></div>`; }).join("") : ""}
 </div>
 
 </div>
