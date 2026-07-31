@@ -31,16 +31,18 @@ When the user says ANY of the following after finishing a day's lesson, execute 
 
 **Execute all of the following automatically without asking:**
 
-1. Update `days.json` — fill in the day's full HTML notes + practice section; add `"status": "done"`
-2. Update `SESSION_PROGRESS.md` — mark day as `[x]`, update `last_updated`, update current status
-3. Run `node C:\Users\Administrator\Desktop\dongtaixuexi\build.js`
-4. Run git commands at `C:\Users\Administrator\Desktop\dongtaixuexi\`:
+1. Confirm the Day passed acceptance; otherwise save only the current state and do not publish.
+2. Update `days.json` — fill in the day's full HTML notes + practice section; add `"status": "done"`
+3. Update `SESSION_PROGRESS.md` — mark day as `[x]`, update `last_updated`, update current status
+4. Run `node C:\Users\Administrator\Desktop\dongtaixuexi\build.js` and validate the generated page plus `git diff --check`.
+5. Run git commands at `C:\Users\Administrator\Desktop\dongtaixuexi\`:
    ```
-   git add -A
+   git status --short
+   git add -- SESSION_PROGRESS.md days.json index.html
    git commit -m "Update: Day X completed"
    git push origin master
    ```
-5. Confirm: "网站已更新, 1-2分钟后刷新 https://xiaojia-afk.github.io/dongtaixuexi/"
+6. Never stage unrelated or untracked files. Confirm: "网站已更新, 1-2分钟后刷新 https://xiaojia-afk.github.io/dongtaixuexi/"
 
 ### `$track-session status` (quick check)
 Report: completed/total days, current phase, next task, without reading all files.
