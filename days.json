@@ -292,9 +292,18 @@
       "items": [
         "Day 8: APC 注入 (QueueUserAPC) — Alertable State 硬前提，实验 A/B 对比验证",
         "Day 9: 注入体系总结 — 六种方式对比、统一分析五问、线程劫持原理与反作弊证据链",
+        "Day 10: 注入检测视角 — DEP/ASLR/CFG 缓解机制 + 反注入检测思路（概念推理验收，未做实时进程枚举实验）",
         "踩坑：LoadLibraryA 不能处理中文路径，改用 LoadLibraryW；MSVC UTF-8 源文件需 /utf-8",
         "新增 APCInjector + AlertableTarget 项目，统一输出到 学习/x64/Debug/",
         "笔记优化：前期基础与 Day 1-8 补齐复习锚点、验证证据、误区排查、逆向/防御视角和官方资料方向"
+      ]
+    },
+    {
+      "date": "2026-08-01",
+      "items": [
+        "Day 11: x64 汇编 + IAT Hook — 换 IAT 槽位地址实现 Hook，实验+调试验证+验收通过",
+        "调试证据：RDX/R8/R9 寄存器传参 + 调用栈 main → MyMessageBoxA + 弹窗正文被篡改",
+        "工程：IATHook 迁入 学习/Dll1/IATHook 并加入 学习.sln；修复构建脚本路径、OriginalFirstThunk 回退、VirtualProtect 错误检查；Release x64 构建 0 警告 0 错误"
       ]
     }
   ]
