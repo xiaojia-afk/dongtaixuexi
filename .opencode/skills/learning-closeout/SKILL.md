@@ -1,11 +1,11 @@
 ---
 name: learning-closeout
-description: Use after a Windows reverse-learning day has passed acceptance or the user says the day is complete. Update the learning session and review notes, rebuild and validate the website, then safely publish only the intended learning files.
+description: Use throughout a Windows reverse-learning day to track evidence gates, automatically begin acceptance after the final task, and close out after acceptance without requiring the user to announce completion.
 ---
 
 # Learning Closeout
 
-Run only after the user explicitly finishes the Day or passes the Day acceptance. Do not close out an unfinished lesson or a failed experiment.
+At the start of each Day, create internal evidence gates for concept explanation, experiment evidence or diagnosed failure, one pitfall/defense insight, and acceptance answers. After each learner message, update the gates. When the final learning gate is satisfied, ask the acceptance questions immediately; after they pass, run the closeout below without waiting for the user to say the Day is complete. Keep the Day in progress if any gate is missing.
 
 ## Read First
 
