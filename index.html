@@ -10,7 +10,9 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;display:flex;min-height:100vh}
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sw);background:var(--sidebar-bg);color:var(--sidebar-text);padding:28px 20px;overflow-y:auto;z-index:10;user-select:none}
 .sidebar h2{color:#fff;font-size:1rem;margin-bottom:6px;border:none;padding:0}
-.sidebar .sub{font-size:.72rem;color:#6b7280;margin-bottom:20px}
+.sidebar .sub{font-size:.72rem;color:#6b7280;margin-bottom:16px}
+.jump{display:flex;gap:6px;margin:0 0 16px}.jump input{flex:1;min-width:0;background:#111318;border:1px solid #2b2f3a;color:#e0e3eb;border-radius:6px;padding:7px 10px;font-size:.8rem;outline:none}.jump input::placeholder{color:#6b7280}.jump input:focus{border-color:#60a5fa}.jump button{flex-shrink:0;background:#1e3a5f;color:#60a5fa;border:none;border-radius:6px;padding:0 12px;font-size:.78rem;cursor:pointer}.jump button:hover{background:#274b78}
+.menu-toggle{display:none}
 .sidebar .roadmap{font-size:.7rem;line-height:1.6;color:#6b7280;background:#111318;border-radius:6px;padding:10px 12px;margin-bottom:20px;white-space:pre-wrap}
 .sidebar .roadmap .here{color:#fbbf24;font-weight:600}
 .sidebar .roadmap .done{color:#34d399}
@@ -52,7 +54,7 @@ pre code{background:none;padding:0;color:inherit}
 .nav-bar button:hover{background:#e9ecef}
 .nav-bar button:disabled{opacity:.35;cursor:default}
 .nav-bar .pi{font-size:.85rem;color:var(--muted);min-width:60px;text-align:center}
-@media(max-width:768px){body{display:block}.sidebar{position:static;width:100%;max-height:280px;padding:18px 16px}.main{margin-left:0}.pc{padding:20px 18px}.sidebar .roadmap{margin-bottom:12px}.sidebar nav{max-height:150px;overflow-y:auto}}
+@media(max-width:768px){body{display:block}.sidebar{position:static;width:100%;max-height:none;padding:14px 16px}.main{margin-left:0}.pc{padding:20px 18px}.sidebar .roadmap{margin-bottom:12px}.menu-toggle{display:block;width:100%;margin:0 0 10px;background:#262930;color:#e0e3eb;border:none;border-radius:6px;padding:9px 12px;font-size:.82rem;cursor:pointer;text-align:left}.menu-toggle::after{content:" ▾"}.sidebar.open .menu-toggle::after{content:" ▴"}.sidebar nav{display:none}.sidebar.open nav{display:block;max-height:52vh;overflow-y:auto}}
 .log-section{margin-top:16px;font-size:.7rem;color:#6b7280;border-top:1px solid #262930;padding-top:12px}.log-title{color:#9ca3af;font-weight:600;margin-bottom:8px}.log-entry{margin-bottom:8px}.log-date{color:#fbbf24;margin-bottom:2px}.log-item{color:#6b7280;padding:1px 0}.log-item::before{content:"- ";color:#4b5563}
 </style>
 </head>
@@ -60,6 +62,8 @@ pre code{background:none;padding:0;color:inherit}
 <div class="sidebar">
 <h2>学习笔记</h2>
 <div class="sub">Windows 逆向 · 游戏安全</div>
+<button class="menu-toggle" id="mt">📚 目录</button>
+<div class="jump"><input id="jump" type="text" placeholder="输入跳转：12 / Day 12 / 基础-2" autocomplete="off"><button id="jb">跳转</button></div>
 <div class="roadmap">▶前期基础<span class="done"> ✅</span>
 ▶PE 格式 (Day 1-4)<span class="done"> ✅</span>
   ├ ▶注入基础 (Day 5-7)<span class="done"> ✅</span>
@@ -523,11 +527,16 @@ HookDll 注入 explorer、VS、WeChat 等十几个进程
     <div class="nav-bar"><button id="pb" disabled>◀ 上一页</button><span class="pi" id="pi">Day 1 / 33</span><button id="nb">下一页 ▶</button></div>
 </div></div>
 <script>
-(function(){var p=document.querySelectorAll(".page");var n=document.querySelectorAll(".sidebar nav a");var b=document.getElementById("pb");var x=document.getElementById("nb");var t=document.getElementById("pi");var c=0;var l=p.length;
-function s(i){for(var j=0;j<l;j++)p[j].classList.remove("active");for(var k=0;k<n.length;k++)n[k].classList.remove("active");p[i].classList.add("active");n[i].classList.add("active");b.disabled=i===0;x.disabled=i===l-1;t.textContent="Day "+p[i].dataset.day+" / "+l}
+(function(){var p=document.querySelectorAll(".page");var n=document.querySelectorAll(".sidebar nav a");var b=document.getElementById("pb");var x=document.getElementById("nb");var t=document.getElementById("pi");var j=document.getElementById("jump");var jb=document.getElementById("jb");var mt=document.getElementById("mt");var sb=document.querySelector(".sidebar");var F=3;var c=0;var l=p.length;
+function label(i){var d=p[i].dataset.day;return d.charAt(0)==="f"?"基础-"+((+d.slice(1))+1):"Day "+d}
+function s(i){for(var k=0;k<l;k++)p[k].classList.remove("active");for(var k2=0;k2<n.length;k2++)n[k2].classList.remove("active");p[i].classList.add("active");n[i].classList.add("active");b.disabled=i===0;x.disabled=i===l-1;t.textContent=label(i)+" / "+l}
+function done(){if(window.innerWidth<=768)sb.classList.remove("open");window.scrollTo(0,0)}
+function go(){var e=j.value.trim().toLowerCase();var m;if((m=e.match(/^(?:day\s*)?(\d{1,2})$/))){var d=+m[1];if(d>=1&&d<=30){c=d+F-1;s(c);j.value="";done();return}}if((m=e.match(/^(?:基础|base|f)\s*-?\s*(\d)$/))){var f=+m[1];if(f>=1&&f<=F){c=f-1;s(c);j.value="";done();return}}j.value="未找到，试试 1-30 或 基础-1"}
 b.onclick=function(){if(c>0){c--;s(c)}};x.onclick=function(){if(c<l-1){c++;s(c)}};
-for(var i=0;i<n.length;i++){(function(j){n[j].onclick=function(e){e.preventDefault();c=j;s(c)}})(i)}
-document.onkeydown=function(e){if(e.key==="ArrowLeft"&&c>0){c--;s(c)}if(e.key==="ArrowRight"&&c<l-1){c++;s(c)}}})();
+for(var i=0;i<n.length;i++){(function(idx){n[idx].onclick=function(e){e.preventDefault();c=idx;s(c);done()}})(i)}
+j.onfocus=function(){j.select()};j.onkeydown=function(e){if(e.key==="Enter"){go();return false}};jb.onclick=go;
+mt.onclick=function(){sb.classList.toggle("open")};
+document.onkeydown=function(e){if(document.activeElement===j)return;if(e.key==="ArrowLeft"&&c>0){c--;s(c)}if(e.key==="ArrowRight"&&c<l-1){c++;s(c)}}})();
 </script>
 </body>
 </html>
