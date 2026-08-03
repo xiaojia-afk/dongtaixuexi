@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-08-02T22:27:43+08:00
+last_updated: 2026-08-03T11:50:48+08:00
 status: in-progress
 ---  
 
@@ -27,7 +27,7 @@ status: in-progress
 **阶段二：Hook 体系 (11-15)**  
 - [x] <!-- id:t_hook_iat dep:t_detect --> Day 11: x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址
 - [x] <!-- id:t_hook_inline dep:t_hook_iat --> Day 12: Inline Hook — jmp detour/5字节/Trampoline/原子写入
-- [ ] <!-- id:t_hook_vtable dep:t_hook_inline --> Day 13: VTable Hook — C++虚函数表替换 + 对象逆向基础  
+- [x] <!-- id:t_hook_vtable dep:t_hook_inline --> Day 13: VTable Hook — C++虚函数表替换 + 对象逆向基础
 - [ ] <!-- id:t_hook_veh dep:t_hook_vtable --> Day 14: VEH Hook + SEH对比 — 向量化异常处理 + SEH机制 + x64表驱动异常(.pdata/.xdata)  
 - [ ] <!-- id:t_hook_hwbp dep:t_hook_veh --> Day 15: 硬件断点 (HWBP) — DR0-DR7寄存器/单次触发/反检测  
 
@@ -65,13 +65,17 @@ status: in-progress
 
 ## Current Status  
 
-进度: 12/30 (40%) — 第一阶段
+进度: 13/30 (43%) — 第一阶段
 路线: Day 8-60 主路线保持不变；DS 负责基础理论，Codex 负责工程/实操/调试/验收/笔记网站
-实操模型: 5.6luna max（日常实操；用户明确要求重新接管 Day 12）
-正在: Day 12 Inline Hook — 已完成；Debug/Release 构建、独立运行、普通 x64dbg HookAdd 停点、RCX=3/RDX=5、核心复述、trampoline 理解和指令边界失败点均已确认。正式文章和网站已完成生成验证。
-下一步: 进入 Day 13 VTable Hook；实操模型恢复为 5.6luna max（日常实操）。
+实操模型: 5.6luna max（日常实操）
+正在: Day 13 VTable Hook — 已完成概念复述、Debug/Release Rebuild、独立运行、普通 x64dbg `HookAdd` 停点和对象/虚表内存证据；用户实测 RIP=`HookAdd`、RCX 为对象指针、RDX=3、R8=5，确认副本 slot 0 指向 HookAdd，Hook 返回 108、Multiply 保持 15，恢复 vptr 后 Add 回到 8。正式文章与网站已完成生成验证。
+下一步: 进入 Day 14 VEH Hook + SEH 对比；实操模型恢复为 5.6luna max（日常实操）。
 
 ## Decisions  
+
+- <!-- at:2026-08-03T11:50:48+08:00 --> Day 13 后台预检完成：独立 `VTableHookLab` 归入 `学习\Dll1\` 并加入 `学习.sln`；Debug/Release 输出统一到 `学习\Dll1\x64\Debug|Release\`。独立运行已验证 Add 的虚表 slot 0 被替换后结果从 8 变为 108，Multiply slot 1 保持 15，恢复 vptr 后 Add 回到 8；调试器内证据仍必须由后续实操确认。
+
+- <!-- at:2026-08-03T12:51:54+08:00 --> Day 13 验收通过：用户能用大白话说明对象 vptr 指向 vtable 副本、slot 0 改为 HookAdd、HookAdd 调用保存的原 Add、恢复原 vptr；普通 x64dbg 已实测 RIP/模块/函数、RCX/RDX/R8、调用栈和副本 slot 0 字节证据；用户理解直接改公共 vtable 会影响共享对象且只读写入可能崩溃。正式文章已写入 days.json，待网站构建与发布验证。
 
 - <!-- at:2026-08-02T21:46:03+08:00 --> 用户明确终止本次 Sol 救场并要求 Luna 重新接管 Day 12；这是对当前接管状态的直接覆盖。Day 12 继续保持 in-progress，Luna 不继承失败教学步骤、不假定现有代码正确，必须先独立复核和亲自跑通，再让用户操作；未验收前不更新 days.json 或网站。
 - <!-- at:2026-08-02T21:46:03+08:00 --> Day12InlineHook 的 Debug/Release 输出已统一到 `学习\Dll1\x64\Debug|Release`，旧的 `学习\x64\Release\Day12InlineHook.exe` 已在重建时清理，避免再次误开 Release 版。
@@ -109,6 +113,10 @@ status: in-progress
 
 ## Failed Attempts
 
+- <!-- id:f_day13_sandbox_build task:t_hook_vtable --> 首次 Day 13 MSBuild 在默认沙箱中无法创建桌面工程的 `VTableHookLab\x64\Debug\` 中间目录，报访问被拒绝；改用受控构建权限后 Debug/Release Rebuild 均成功，不能将该环境阻断误判为代码编译失败。
+
+- <!-- id:f_day13_int3_loop task:t_hook_vtable --> Day 13 初版把 `__debugbreak()` 放进 HookAdd，普通 x64dbg 中表现为 `INT3` 地址来回切换，反复 F9 不能得到稳定的普通断点证据；已移除自带 INT3，改用符号 `HookAdd` 上的普通 F2 断点，并由用户实际命中。
+
 - <!-- id:f_day12_wrong_release task:t_hook_inline --> 第一次新工程 x64dbg 尝试误开了旧路径 `学习\x64\Release\Day12InlineHook.exe`；截图入口 RVA `1A90` 与 Release PE 头一致，因此该次不构成 Debug 失败证据。工程输出目录随后已统一，旧误导副本已清理。
 - <!-- id:f_day12_int3_ignore task:t_hook_inline --> 后续自动 INT3 路线仍未得到有效停点；已在 `x64dbg.ini` 确认 `IgnoreRange=00000000-00000000:first:log:debuggee,00000000-FFFFFFFF:nobreak:log:debuggee`，该规则覆盖断点异常 `0x80000003`，足以解释为何程序不暂停。禁止再让用户重复按 F9；Luna 必须先修正/隔离此配置并自行获得调试器证据。
 - <!-- id:f_day12_ds task:t_hook_inline --> 旧 Day 12 InlineHook 工程虽能独立运行，但代码质量与 x64dbg 教学过程不可靠；用户授权后已删除旧项目、旧 Debug/Release 产物和解决方案引用，禁止重新使用。
@@ -116,6 +124,10 @@ status: in-progress
 - <!-- id:f_day12_headless_entry task:t_hook_inline --> 初始 x64dbg headless `-c` 路线被默认 `EntryBreakpoint=1` 和启动时序截停在 system/mainCRTStartup；改用 `-cf` 脚本清除 `mainCRTStartup` 后才稳定命中 `HookAdd`，因此前面的 system/entry breakpoint 输出不算 Day 12 调试证据。
 
 ## Completed Work
+
+- <!-- ref:t_hook_vtable at:2026-08-03T11:50:48+08:00 --> 完成 Day 13 `VTableHookLab` 工程创建、解决方案接入、Debug/Release Rebuild 和独立运行验证；当前唯一缺口是普通 x64dbg 中的 HookAdd 停点与寄存器/对象虚表证据，Day 13 尚未验收。
+
+- <!-- ref:t_hook_vtable at:2026-08-03T12:51:54+08:00 --> Day 13 正式完成：完成 VTable Hook 工程、独立运行、普通 x64dbg 停点、参数寄存器、调用栈、对象 vptr/虚表副本内存证据、概念复述和失败点理解；days.json 已更新为 done，网站生成验证待完成。
 
 - <!-- ref:t_hook_inline at:2026-08-02T22:01:24+08:00 --> 完成 Day 12 工程后台预检、Debug/Release 重建、独立运行核验、隔离 x64dbg headless 停点验证和普通 x64dbg 异常配置修正；Day 12 仍保持 in-progress，等待用户在普通 GUI 中复现并完成概念/失败点/验收闭环。
 - <!-- ref:t_hook_inline at:2026-08-02T22:12:32+08:00 --> 用户完成普通 x64dbg `HookAdd` 停点复现，实测 `RCX=3`、`RDX=5`；仍需核对 detour 字节和执行链，并通过概念/失败点/验收后才能收尾。
