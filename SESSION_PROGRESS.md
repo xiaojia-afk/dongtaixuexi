@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-08-06T20:05:28+08:00
+last_updated: 2026-08-06T21:30:43+08:00
 status: in-progress
 ---  
 
@@ -73,6 +73,8 @@ status: in-progress
 下一步: 由 DS 开始 Day 15 硬件断点（HWBP）的理论前置；DS 交接前 Codex 不提前开始实操。
 
 ## Decisions  
+
+- <!-- at:2026-08-06T21:30:43+08:00 --> 学习闭环低开销协议 v4 已落地：DS 网站内容交回卡优先触发原实操模型直接闭环，即使 SESSION 仍显示“DS 实操后复盘”也不再退回 DS；确定性闭环只保留一个 Luna/Sol 执行者，不创建同模型子代理，不重跑已验收实验。Day 完成、正式源文件、GitHub 构建、Pages 公开发布分开报告；Pages 推送后只做一次不超过 60 秒的状态检查，外部排队则记录唯一缺口并停止，不默认推空提交。桌面上下文助手已升级为 v4，提示词契约测试 4/4 和 EXE 启动验证通过；本次规则优化不改变当前 Day 状态，也不算学习证据。
 
 - <!-- at:2026-08-06T20:05:28+08:00 --> Day 14 最终事实审计通过：DS 交回卡已补齐实操后复盘与理解确认；本轮重新完成 Debug/Release x64 单项目 Rebuild 和独立运行，两个产物均返回 0，分别验证 `E0421401 -> VEH -> 108` 与 `E0421402 -> VEH declined -> SehFilter -> 200`。普通 x64dbg 的 `Day14VehHandler`/`SehFilter` 停点证据与当前源码、Debug RVA `0x1240/0x1400` 一致。`C0000005` 仅确认发生在普通 GUI 的嵌套异常处理者软件断点人工续跑场景，x64dbg 内部精确故障点仍未验证；不把推测升级为根因。x64 表驱动表述修正为：最终 Debug PE 有只读 `.pdata`，unwind/handler 数据位于只读 `.rdata`（文档常称 xdata），不声称本构建存在独立命名的 `.xdata` 节。
 
