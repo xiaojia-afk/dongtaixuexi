@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-08-03T11:50:48+08:00
+last_updated: 2026-08-06T20:05:28+08:00
 status: in-progress
 ---  
 
@@ -28,7 +28,7 @@ status: in-progress
 - [x] <!-- id:t_hook_iat dep:t_detect --> Day 11: x64 汇编 + IAT Hook — 调用约定/SSE浮点基础 + 替换导入表地址
 - [x] <!-- id:t_hook_inline dep:t_hook_iat --> Day 12: Inline Hook — jmp detour/5字节/Trampoline/原子写入
 - [x] <!-- id:t_hook_vtable dep:t_hook_inline --> Day 13: VTable Hook — C++虚函数表替换 + 对象逆向基础
-- [ ] <!-- id:t_hook_veh dep:t_hook_vtable --> Day 14: VEH Hook + SEH对比 — 向量化异常处理 + SEH机制 + x64表驱动异常(.pdata/.xdata)  
+- [x] <!-- id:t_hook_veh dep:t_hook_vtable --> Day 14: VEH Hook + SEH对比 — 向量化异常处理 + SEH机制 + x64表驱动异常(.pdata/.xdata)
 - [ ] <!-- id:t_hook_hwbp dep:t_hook_veh --> Day 15: 硬件断点 (HWBP) — DR0-DR7寄存器/单次触发/反检测  
 
 **阶段三：反调试与保护 (16-20)**  
@@ -65,13 +65,26 @@ status: in-progress
 
 ## Current Status  
 
-进度: 13/30 (43%) — 第一阶段
-路线: Day 8-60 主路线保持不变；DS 负责基础理论，Codex 负责工程/实操/调试/验收/笔记网站
+进度: 14/30 (47%) — 第一阶段
+路线: Day 8-60 主路线保持不变；DS 负责理论前置与实操后复盘，Codex 负责工程/实操/调试证据验收/笔记网站
+教学阶段: DS 理论前置
 实操模型: 5.6luna max（日常实操）
-正在: Day 13 VTable Hook — 已完成概念复述、Debug/Release Rebuild、独立运行、普通 x64dbg `HookAdd` 停点和对象/虚表内存证据；用户实测 RIP=`HookAdd`、RCX 为对象指针、RDX=3、R8=5，确认副本 slot 0 指向 HookAdd，Hook 返回 108、Multiply 保持 15，恢复 vptr 后 Add 回到 8。正式文章与网站已完成生成验证。
-下一步: 进入 Day 14 VEH Hook + SEH 对比；实操模型恢复为 5.6luna max（日常实操）。
+正在: Day 15 硬件断点（HWBP）— 尚未开始。Day 14 已完成 DS 理论前置、Sol 实操/调试证据验收、DS 实操后复盘与理解确认，并按实测边界正式验收；Day 15 等待 DS 理论前置交接卡。
+下一步: 由 DS 开始 Day 15 硬件断点（HWBP）的理论前置；DS 交接前 Codex 不提前开始实操。
 
 ## Decisions  
+
+- <!-- at:2026-08-06T20:05:28+08:00 --> Day 14 最终事实审计通过：DS 交回卡已补齐实操后复盘与理解确认；本轮重新完成 Debug/Release x64 单项目 Rebuild 和独立运行，两个产物均返回 0，分别验证 `E0421401 -> VEH -> 108` 与 `E0421402 -> VEH declined -> SehFilter -> 200`。普通 x64dbg 的 `Day14VehHandler`/`SehFilter` 停点证据与当前源码、Debug RVA `0x1240/0x1400` 一致。`C0000005` 仅确认发生在普通 GUI 的嵌套异常处理者软件断点人工续跑场景，x64dbg 内部精确故障点仍未验证；不把推测升级为根因。x64 表驱动表述修正为：最终 Debug PE 有只读 `.pdata`，unwind/handler 数据位于只读 `.rdata`（文档常称 xdata），不声称本构建存在独立命名的 `.xdata` 节。
+
+- <!-- at:2026-08-06T19:15:31+08:00 --> 学习系统规则审计完成：长期规则、`learning-closeout` skill、上下文助手源码/README 和 SESSION 的四阶段路由已统一；桌面 `学习上下文助手.exe` 重建为 `2026-08-06-v3`，当前“DS 实操后复盘”会自动推荐 DS，Luna/Sol 提示词强制在实操证据齐全后停止理论讲解并交出事实摘要。提示词合同自动测试 3/3 通过，旧 v2 备份和临时构建缓存已移入回收站；本次基础设施优化不算 Day 14 完成证据。
+
+- <!-- at:2026-08-06T19:06:21+08:00 --> 学习闭环角色边界纠正：固定顺序改为“DS 理论前置 -> Luna/Sol 实操与取证 -> DS 实操后复盘与理解确认 -> 原 Luna/Sol 文件和网站闭环”。Codex 只验收实操工程与可见证据，不再承担实操后的整课理论讲解或理论考试；没有 DS 复盘交回卡时 Day 必须保持 in-progress。Day 14 已取得全部实操证据，当前正式进入 DS 实操后复盘阶段，days.json 仍为 planned，网站未生成、未发布。
+
+- <!-- at:2026-08-06T18:36:27+08:00 --> Day 14 Sol 根因审计修正：旧 GUI 会话不是完整根因。干净 GUI 能稳定进入 `Day14VehHandler`，但用户从 handler 内的软件断点手动 F9 后仍复现同一 `ntdll C0000005`；隔离 headless 由脚本控制相同执行链则能从 `E0421401` handler 继续到 `E0421402`，证明目标代码和 Windows VEH 返回链可用，差异集中在普通 GUI 中“嵌套异常处理者软件断点后的人工续跑”。教学路线改为每个证据点使用新进程的一次性自动检查点，不再重复 F9/Shift+F9。
+
+- <!-- at:2026-08-06T18:18:09+08:00 --> Day 14 命中 Luna 自动升级条件：同一 `ntdll` 访问异常在第一次异常和交回后的第二次异常重复出现，`Day14VehHandler` 断点始终未命中。已停止第三次同类尝试，将“实操模型”切换为 `5.6sol max（救场，直到当前 Day 验收）`；Day 14 保持 in-progress，唯一缺口为可信的调试器内 VEH/SEH 顺序证据。
+
+- <!-- at:2026-08-06T17:54:16+08:00 --> Day 14 后台预检完成：新建 `学习\Dll1\VEHHookLab` 并加入 `学习.sln`，x64/v145/C++20/Debug-PDB 和统一 `学习\Dll1\x64\Debug|Release\` 输出约定与前课一致。Day 14 项目 Debug Rebuild、Release 单项目 Rebuild、Debug/Release 独立运行均成功；`dumpbin /unwindinfo` 已列出三个关键函数的 x64 unwind 记录，普通调试器证据仍待用户操作确认。
 
 - <!-- at:2026-08-03T11:50:48+08:00 --> Day 13 后台预检完成：独立 `VTableHookLab` 归入 `学习\Dll1\` 并加入 `学习.sln`；Debug/Release 输出统一到 `学习\Dll1\x64\Debug|Release\`。独立运行已验证 Add 的虚表 slot 0 被替换后结果从 8 变为 108，Multiply slot 1 保持 15，恢复 vptr 后 Add 回到 8；调试器内证据仍必须由后续实操确认。
 
@@ -113,6 +126,14 @@ status: in-progress
 
 ## Failed Attempts
 
+- <!-- id:f_day14_gui_resume_from_veh task:t_hook_veh --> Sol 用隔离用户目录启动干净普通 x64dbg，已成功命中 `Day14VehHandler` 并由用户读出 `E0421401`；但随后人工 F9 仍在 `ntdll!00007FFE7336C286` 触发 `C0000005`。因此“只清旧 GUI 会话后继续手动运行”不足以修复，禁止第三次重复；后续改为新进程的一次性脚本检查点。
+
+- <!-- id:f_day14_symbol_bp task:t_hook_veh --> 直接用 `bp day14vehhook.Day14VehHandler` 设置符号断点返回“无效地址”；改用当前进程模块基址加已核对的 handler RVA 设置 `00007FF7530A1240`，断点被 x64dbg 接受，但尚未命中。
+- <!-- id:f_day14_ntdll_av task:t_hook_veh --> 设置 handler 断点后按 F9，x64dbg 在 `ntdll` 地址 `00007FFE7336C286` 首次停下，异常码为 `C0000005 / EXCEPTION_ACCESS_VIOLATION`；按一次 Shift+F9 交回后，同一地址变为第二次异常，`Day14VehHandler` 仍未命中。按升级规则停止继续当前路线，待 Sol 审计异常来源与调试器分发配置。
+
+- <!-- id:f_day14_msbuild_path task:t_hook_veh --> 首次调用 `msbuild` 未找到命令；已定位 Visual Studio 18 Community 的 amd64 MSBuild 绝对路径，后续 Debug Rebuild 成功。
+- <!-- id:f_day14_solution_release_oldprojects task:t_hook_veh --> 方案级 Release Rebuild 被既有 `HookDll` 的 `_wfopen` 安全警告和 `Dll1` 的预编译头错误阻断；Day 14 项目自身已在该次生成并通过单项目 Release Rebuild，未修改无关旧项目。
+
 - <!-- id:f_day13_sandbox_build task:t_hook_vtable --> 首次 Day 13 MSBuild 在默认沙箱中无法创建桌面工程的 `VTableHookLab\x64\Debug\` 中间目录，报访问被拒绝；改用受控构建权限后 Debug/Release Rebuild 均成功，不能将该环境阻断误判为代码编译失败。
 
 - <!-- id:f_day13_int3_loop task:t_hook_vtable --> Day 13 初版把 `__debugbreak()` 放进 HookAdd，普通 x64dbg 中表现为 `INT3` 地址来回切换，反复 F9 不能得到稳定的普通断点证据；已移除自带 INT3，改用符号 `HookAdd` 上的普通 F2 断点，并由用户实际命中。
@@ -125,6 +146,8 @@ status: in-progress
 
 ## Completed Work
 
+- <!-- ref:t_hook_veh at:2026-08-06T20:05:28+08:00 --> Day 14 正式完成：DS 理论前置与实操后复盘门均满足；Debug/Release 编译和独立运行、普通 x64dbg 中 `E0421401/E0421402` 先到 VEH 以及 `SehFilter` 的 RIP/RCX、Debug PE 的 `.pdata`/unwind 元数据均通过核对；失败实验及“已验证/推测”边界已保留。下一 Day 恢复 Luna 日常实操模型。
+
 - <!-- ref:t_hook_vtable at:2026-08-03T11:50:48+08:00 --> 完成 Day 13 `VTableHookLab` 工程创建、解决方案接入、Debug/Release Rebuild 和独立运行验证；当前唯一缺口是普通 x64dbg 中的 HookAdd 停点与寄存器/对象虚表证据，Day 13 尚未验收。
 
 - <!-- ref:t_hook_vtable at:2026-08-03T12:51:54+08:00 --> Day 13 正式完成：完成 VTable Hook 工程、独立运行、普通 x64dbg 停点、参数寄存器、调用栈、对象 vptr/虚表副本内存证据、概念复述和失败点理解；days.json 已更新为 done，网站生成验证待完成。
@@ -135,12 +158,30 @@ status: in-progress
 - <!-- ref:t_hook_inline at:2026-08-02T22:19:41+08:00 --> 用户能用大白话解释 trampoline 的作用；当前还需完成最后的 Day 12 验收题。
 - <!-- ref:t_hook_inline at:2026-08-02T22:27:43+08:00 --> Day 12 正式文章已写入 days.json 并标记 done；node build.js 生成 Day 12/30 页面，验证 JSON、核心文章内容、移除情侣入口和 git diff --check 均通过。
 
+## Verification Results
+
+### Day 14 — Successfully Verified
+
+- 依赖与完成门：Day 13 已完成；DS 理论前置、Sol 实操/调试证据、DS 实操后复盘交回卡和理解确认全部存在，无未解决实操缺口。
+- 工程与构建：`VEHHookLab` 属于 `学习.sln`，x64/v145/C++20；Debug 与 Release 单项目 Rebuild 均成功并生成各自的 `Day14VEHHook.exe`。
+- 独立运行：Debug/Release 均退出码 0；`E0421401` 路径输出 `VEH handled`、108，`E0421402` 路径输出 `VEH declined -> SEH filter`、200。
+- 调试证据：普通 x64dbg 已分别确认 `E0421401`、`E0421402` 到达 `Day14VehHandler`；新进程停在 `day14vehhook!SehFilter+0` 时 `RCX=E0421402`。当前 Debug 二进制再次确认 `Day14VehHandler=RVA 0x1240`、`SehFilter=RVA 0x1400`。
+- x64 元数据：当前 Debug PE 为 PE32+ x64，Exception Directory 指向只读 `.pdata`；`dumpbin /unwindinfo` 可见函数表、`__C_specific_handler` 与 scope table，unwind 数据 RVA 落在只读 `.rdata`。
+
+### Day 14 — Preserved Boundary
+
+- 普通 x64dbg GUI 中从嵌套异常处理者的软件断点人工续跑会在历史会话的同一 `ntdll` 地址出现 `C0000005`；它是真实访问违例且不是本课设计的自定义异常。已验证差异集中在该 GUI 续跑场景，但未验证 x64dbg 内部精确故障点，因此只保留现象、范围和稳定替代路线，不写成已确认根因。
+- `0x1240/0x1400` 是本轮 Debug 构建 RVA；Release 优化和后续重建可改变函数布局，ASLR 也会改变绝对地址。
+
 ## Key Paths  
 
 - 解决方案: `C:\Users\Administrator\Desktop\学习\Dll1\学习.sln`  
 - Day 12 源项目: `C:\Users\Administrator\Desktop\学习\Dll1\InlineHookLab\`
 - Day 12 Debug: `C:\Users\Administrator\Desktop\学习\Dll1\x64\Debug\Day12InlineHook.exe`
 - Day 12 Release: `C:\Users\Administrator\Desktop\学习\Dll1\x64\Release\Day12InlineHook.exe`
+- Day 14 源项目: `C:\Users\Administrator\Desktop\学习\Dll1\VEHHookLab\`
+- Day 14 Debug: `C:\Users\Administrator\Desktop\学习\Dll1\x64\Debug\Day14VEHHook.exe`
+- Day 14 Release: `C:\Users\Administrator\Desktop\学习\Dll1\x64\Release\Day14VEHHook.exe`
 - x64dbg 配置: `C:\Users\Administrator\Desktop\x64dbug\release\x64\x64dbg.ini`
 - 网站仓库: `C:\Users\Administrator\Desktop\dongtaixuexi\`  
 - 网站在线: https://xiaojia-afk.github.io/dongtaixuexi/  
