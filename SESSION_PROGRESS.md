@@ -3,7 +3,7 @@ schema: cc-dash/session@1
 project: windows-reverse-learning  
 session_id: s_2026-07-30_day8-apc  
 started: 2026-07-30T00:00:00+08:00  
-last_updated: 2026-08-06T21:30:43+08:00
+last_updated: 2026-08-09T01:50:00+08:00
 status: in-progress
 ---  
 
@@ -29,7 +29,7 @@ status: in-progress
 - [x] <!-- id:t_hook_inline dep:t_hook_iat --> Day 12: Inline Hook — jmp detour/5字节/Trampoline/原子写入
 - [x] <!-- id:t_hook_vtable dep:t_hook_inline --> Day 13: VTable Hook — C++虚函数表替换 + 对象逆向基础
 - [x] <!-- id:t_hook_veh dep:t_hook_vtable --> Day 14: VEH Hook + SEH对比 — 向量化异常处理 + SEH机制 + x64表驱动异常(.pdata/.xdata)
-- [ ] <!-- id:t_hook_hwbp dep:t_hook_veh --> Day 15: 硬件断点 (HWBP) — DR0-DR7寄存器/单次触发/反检测  
+- [x] <!-- id:t_hook_hwbp dep:t_hook_veh --> Day 15: 硬件断点 (HWBP) — DR0-DR7寄存器/单次触发/反检测  
 
 **阶段三：反调试与保护 (16-20)**  
 - [ ] <!-- id:t_debugger dep:t_hook_hwbp --> Day 16: 调试器原理 — 断点触发/异常分发/DebugPort  
@@ -65,14 +65,20 @@ status: in-progress
 
 ## Current Status  
 
-进度: 14/30 (47%) — 第一阶段
-路线: Day 8-60 主路线保持不变；DS 负责理论前置与实操后复盘，Codex 负责工程/实操/调试证据验收/笔记网站
+进度: 15/30 (50%) — 第一阶段
+路线: Day 8-60 主路线保持不变；DS 负责日常全流程（教学、实操引导、日常实验工程、复盘与网站闭环）；Sol 负责学习计划大方向、高难救场和每 3-5 课定期抽查
 教学阶段: DS 理论前置
-实操模型: 5.6luna max（日常实操）
-正在: Day 15 硬件断点（HWBP）— 尚未开始。Day 14 已完成 DS 理论前置、Sol 实操/调试证据验收、DS 实操后复盘与理解确认，并按实测边界正式验收；Day 15 等待 DS 理论前置交接卡。
-下一步: 由 DS 开始 Day 15 硬件断点（HWBP）的理论前置；DS 交接前 Codex 不提前开始实操。
+实操模型: DS 负责引导用户逐步实操并核对可见证据及日常闭环；Sol 只在大方向、救场和抽查时介入
+正在: Day 16 调试器原理 — 尚未开始。Day 15 硬件断点（HWBP）已由 DS 完成理论前置、实操引导（执行/写入/软件断点三连验证）、实操后复盘与理解确认，证据齐全并正式验收。
+下一步: 由 DS 开始 Day 16 调试器原理（断点触发/异常分发/DebugPort）的理论前置。
 
 ## Decisions  
+
+- <!-- at:2026-08-09T01:50:00+08:00 --> Day 15 硬件断点（HWBP）正式完成：DS 理论前置（软件断点 vs 硬件断点、DR0-DR7 分工、触发条件、one-shot、反检测闭环）全部通过理解确认；实操证据齐全——普通 x64dbg 中 DR0-DR7 初始全 0、硬件执行断点（DR0=GameTick 地址、DR7=1）命中 RIP=GameTick、硬件写入断点（DR0=g_hp、DR7=0xD0001）命中 RIP=TakeDamage 写血量指令、软件断点 bp 同址命中；后台 Win32 调试 API 验证器复测执行/写入断点（DR6 bit0=1）全部成功。环境事实：x64dbg headless 有 ntdll C0000005 噪音（LoadLibraryW 线程，标准调试 API 下程序无异常），已定位为 headless 特有缺陷，不影响普通 GUI 实操。
+
+- <!-- at:2026-08-07T02:45:00+08:00 --> 协议升级 v5.2（用户决定，Sol 备案）：日常闭环归 DS——DS 负责教学、实操引导、复盘、网站内容、日常实验代码与后台工程准备、网站落地（days.json/node build.js/发布/SESSION 状态维护）；Sol 只保留学习计划大方向与路线审核、高难救场和定期抽查（每 3-5 课核对网站内容与证据一致性）。v5.1 的 Sol 闭环职责废止。
+
+- <!-- at:2026-08-07T02:15:00+08:00 --> 两模型制协议 v5.1 落地（Sol 验收修正后）：废止 Luna，DS 负责全部教学（含实操引导与读图核对、网站内容草稿【给 Sol 的网站内容摘要/复习锚点】），Sol 负责全部工程（构建/运行/调试取证/网站闭环/救场/路线审核）；《更新笔记助手.txt》重写为 v5.1，上下文助手 EXE v5 重建，learning-closeout 与 track-session skill 同步两模型化；Sol 硬规则：单课预算帽 ≤3%、故障先查 GitHub Actions（build 成功但 deploy 超时=服务端故障，等 10-30 分钟最多重推一次真实提交，禁止空提交/删文件试错）、交接卡自包含不重读全文、写网站保留 DS 草稿教学味道。Day 15 按新体系试跑。
 
 - <!-- at:2026-08-06T21:30:43+08:00 --> 学习闭环低开销协议 v4 已落地：DS 网站内容交回卡优先触发原实操模型直接闭环，即使 SESSION 仍显示“DS 实操后复盘”也不再退回 DS；确定性闭环只保留一个 Luna/Sol 执行者，不创建同模型子代理，不重跑已验收实验。Day 完成、正式源文件、GitHub 构建、Pages 公开发布分开报告；Pages 推送后只做一次不超过 60 秒的状态检查，外部排队则记录唯一缺口并停止，不默认推空提交。桌面上下文助手已升级为 v4，提示词契约测试 4/4 和 EXE 启动验证通过；本次规则优化不改变当前 Day 状态，也不算学习证据。
 
@@ -148,6 +154,8 @@ status: in-progress
 
 ## Completed Work
 
+- <!-- ref:t_hook_hwbp at:2026-08-09T01:50:00+08:00 --> Day 15 正式完成：HWBPLab 工程（`学习\Dll1\HWBPLab`）接入 `学习.sln`，Debug/Release 编译与独立运行通过；普通 x64dbg 实操三连（执行断点/写入断点/软件断点对比）证据齐全，用户理解确认与复盘通过，反作弊检测原理（查 CC 防软件断点、读 DR 防硬件断点）复述正确。
+
 - <!-- ref:t_hook_veh at:2026-08-06T20:05:28+08:00 --> Day 14 正式完成：DS 理论前置与实操后复盘门均满足；Debug/Release 编译和独立运行、普通 x64dbg 中 `E0421401/E0421402` 先到 VEH 以及 `SehFilter` 的 RIP/RCX、Debug PE 的 `.pdata`/unwind 元数据均通过核对；失败实验及“已验证/推测”边界已保留。下一 Day 恢复 Luna 日常实操模型。
 
 - <!-- ref:t_hook_vtable at:2026-08-03T11:50:48+08:00 --> 完成 Day 13 `VTableHookLab` 工程创建、解决方案接入、Debug/Release Rebuild 和独立运行验证；当前唯一缺口是普通 x64dbg 中的 HookAdd 停点与寄存器/对象虚表证据，Day 13 尚未验收。
@@ -201,7 +209,7 @@ status: in-progress
 ### 用户偏好  
 中文沟通，英文术语加括号解释。新手需详细引导，不要甩大纲。  
 学习方式：B站视频 + AI辅助 + 动手验证。每天投入时间多。  
-固定双 AI 模式：DS(V4flash max)负责基础理论；Codex(5.6luna max，重大复盘用5.6sol max)负责工程、实操、验收和笔记网站。
+固定双 AI 模式：DS(V4flash max)负责日常全流程；Sol(5.6sol max)负责学习计划大方向、高难救场和定期抽查。
 模型切换由 Codex 自动判断并写入“实操模型”；用户只描述现象和理解，不负责判断技术难度。
 
 ### 每天教学结构 (GPT-5.5 制定)  
